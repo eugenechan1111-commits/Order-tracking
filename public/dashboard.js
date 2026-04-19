@@ -146,8 +146,8 @@ function renderOrders() {
 
   const STATIONS = ['Cut', 'Edge', 'Boring', 'Cut-Curve', 'Edge-Curve', 'Assembly', 'Packing'];
   const statusLabel = { pending: 'Pending', in_progress: 'In Progress', ready: 'Ready', pickup_delivery: 'Pickup / Delivery', done: 'Done', cancelled: 'Cancelled' };
-  const nextStatus = { pending: 'in_progress', in_progress: 'ready', ready: 'pickup_delivery', pickup_delivery: 'done' };
-  const nextLabel  = { pending: 'Start', in_progress: 'Mark Ready', ready: 'Dispatch', pickup_delivery: 'Mark Done' };
+  const nextStatus = { ready: 'pickup_delivery', pickup_delivery: 'done' };
+  const nextLabel  = { ready: 'Dispatch', pickup_delivery: 'Mark Done' };
 
   document.getElementById('orders-tbody').innerHTML = filtered.map(o => {
     const isDone = ['done','cancelled'].includes(o.status);
