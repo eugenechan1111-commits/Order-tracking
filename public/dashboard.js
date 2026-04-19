@@ -16,8 +16,20 @@ function authHeaders() {
 
 // ── Tab navigation ──
 let allOrders = [], allUsers = [], currentStatusFilter = 'all', trendChart = null;
-let editingUserId = null;
+let editingUserId = null, currentDays = 7;
 const userRole = localStorage.getItem('ao_role') || 'worker';
+
+const PERIOD_LABELS = { 7: '7-Day', 30: '30-Day', 90: 'Quarterly', 365: 'Annual' };
+document.querySelectorAll('.period-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentDays = parseInt(btn.dataset.days);
+    document.getElementById('trend-title').textContent = `${PERIOD_LABELS[currentDays]} Production Trend`;
+    document.getElementById('oee-title').textContent = `${PERIOD_LABELS[currentDays]} OEE Overview`;
+    loadDashboard();
+  });
+});
 
 document.querySelectorAll('.tab-nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -34,7 +46,7 @@ document.querySelectorAll('.tab-nav-btn').forEach(btn => {
 // ── Dashboard KPIs ──
 async function loadDashboard() {
   try {
-    const res = await fetch('/api/dashboard', { headers: authHeaders() });
+    const res = await fetch(`/api/dashboard?days=${currentDays}`, { headers: authHeaders() });
     if (res.status === 401) { window.location.href = '/login'; return; }
     const d = await res.json();
 

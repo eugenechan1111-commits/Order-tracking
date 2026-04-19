@@ -56,11 +56,21 @@
 
     <section class="main-grid">
       <div class="panel">
-        <div class="panel-header"><h2>7-Day Production Trend</h2></div>
+        <div class="panel-header">
+          <h2 id="trend-title">7-Day Production Trend</h2>
+          <div class="period-selector">
+            <button class="period-btn active" data-days="7">7 Days</button>
+            <button class="period-btn" data-days="30">1 Month</button>
+            <button class="period-btn" data-days="90">Quarterly</button>
+            <button class="period-btn" data-days="365">1 Year</button>
+          </div>
+        </div>
         <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
       </div>
       <div class="panel">
-        <div class="panel-header"><h2>Weekly OEE Overview</h2></div>
+        <div class="panel-header">
+          <h2 id="oee-title">Weekly OEE Overview</h2>
+        </div>
         <div id="oee-mini" class="oee-mini-grid"></div>
       </div>
     </section>
