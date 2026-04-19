@@ -146,9 +146,8 @@ function renderOrders() {
 
   const STATIONS = ['Cut', 'Edge', 'Boring', 'Cut-Curve', 'Edge-Curve', 'Assembly', 'Packing'];
   const statusLabel = { pending: 'Pending', in_progress: 'In Progress', ready: 'Ready', pickup_delivery: 'Pickup / Delivery', done: 'Done', cancelled: 'Cancelled' };
-  // Admin can only advance from Ready onward — Start/Mark Ready come from workers
-  const nextStatus = { ready: 'pickup_delivery', pickup_delivery: 'done' };
-  const nextLabel  = { ready: 'Dispatch', pickup_delivery: 'Mark Done' };
+  const nextStatus = { pending: 'in_progress', in_progress: 'ready', ready: 'pickup_delivery', pickup_delivery: 'done' };
+  const nextLabel  = { pending: 'Start', in_progress: 'Mark Ready', ready: 'Dispatch', pickup_delivery: 'Mark Done' };
 
   document.getElementById('orders-tbody').innerHTML = filtered.map(o => {
     const isDone = ['done','cancelled'].includes(o.status);
@@ -178,7 +177,7 @@ function renderOrders() {
     // Action buttons
     let actions = '';
     if (!isDone && nextStatus[o.status]) {
-      actions += `<button class="btn btn-sm btn-outline" onclick="advanceStatus('${o.id}','${nextStatus[o.status]}')">${nextLabel[o.status]}</button>`;
+      actions += `<button class="btn btn-sm btn-primary" onclick="advanceStatus('${o.id}','${nextStatus[o.status]}')">${nextLabel[o.status]}</button>`;
     }
     if (!isDone) {
       actions += ` <button class="btn btn-sm ${o.urgent ? 'btn-warning' : 'btn-outline'}" onclick="toggleUrgent('${o.id}')" title="Toggle urgent">${o.urgent ? '🔴' : '⚑'}</button>`;
