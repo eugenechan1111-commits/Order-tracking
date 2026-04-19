@@ -108,7 +108,7 @@ async function loadOrders() {
     const res = await fetch(`/api/orders${includeHidden ? '?include_hidden=true' : ''}`, { headers: authHeaders() });
     allOrders = await res.json();
     const hiddenBtn = document.getElementById('filter-hidden-btn');
-    if (hiddenBtn) hiddenBtn.style.display = userRole === 'super_admin' ? '' : 'none';
+    if (hiddenBtn) hiddenBtn.style.display = ['admin', 'super_admin'].includes(userRole) ? '' : 'none';
     renderOrders();
   } catch (e) { document.getElementById('orders-tbody').innerHTML = `<tr><td colspan="9" class="error">Failed: ${e.message}</td></tr>`; }
 }
