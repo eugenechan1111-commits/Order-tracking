@@ -8,6 +8,7 @@ const WORKSTATIONS = ['Cut', 'Edge', 'Boring', 'Cut-Curve', 'Edge-Curve', 'Assem
 const USERS = [
   { username: 'boss', password: 'boss123', role: 'super_admin', display_name: 'Boss' },
   { username: 'admin', password: 'admin123', role: 'admin', display_name: 'Admin' },
+  { username: 'worker', password: 'worker123', role: 'worker', display_name: 'Worker' },
   { username: 'john', password: 'worker123', role: 'worker', display_name: 'John Tan' },
   { username: 'mary', password: 'worker123', role: 'worker', display_name: 'Mary Lim' },
   { username: 'ali', password: 'worker123', role: 'worker', display_name: 'Ali Hassan' },
