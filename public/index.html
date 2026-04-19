@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Office — Manager Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="dashboard-body">
+  <header class="dashboard-header">
+    <div class="header-brand">Amber Office <span class="header-sub">Manager Dashboard</span></div>
+    <div class="header-actions">
+      <span id="last-updated" class="last-updated"></span>
+      <span id="header-user" class="header-user"></span>
+      <a href="/worker" class="btn btn-outline btn-sm" target="_blank">Worker Page</a>
+      <button class="btn btn-outline btn-sm theme-toggle-btn" onclick="toggleTheme()">☾ Dark</button>
+      <button id="logout-btn" class="btn btn-outline btn-sm">Logout</button>
+    </div>
+  </header>
+
+  <!-- Tab Nav -->
+  <nav class="tab-nav">
+    <button class="tab-nav-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-nav-btn" data-tab="orders">Orders</button>
+    <button class="tab-nav-btn" data-tab="oee">OEE</button>
+    <button class="tab-nav-btn" data-tab="report">AI Report</button>
+    <button class="tab-nav-btn" data-tab="users">Users</button>
+  </nav>
+
+  <!-- ── DASHBOARD TAB ── -->
+  <div id="tab-dashboard" class="tab-content active">
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Capacity Utilization</div>
+        <div class="kpi-value" id="kpi-capacity">—</div>
+        <div class="kpi-sub" id="kpi-capacity-sub"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">On-Time Delivery (OTD)</div>
+        <div class="kpi-value" id="kpi-otd">—</div>
+        <div class="kpi-sub" id="kpi-otd-sub"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Orders</div>
+        <div class="kpi-value" id="kpi-active">—</div>
+        <div class="kpi-sub">Pending or in production</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">This Week's Shipment</div>
+        <div class="kpi-value" id="kpi-shipment">—</div>
+        <div class="kpi-sub" id="kpi-shipment-sub"></div>
+      </div>
+    </section>
+
+    <section class="main-grid">
+      <div class="panel">
+        <div class="panel-header"><h2>7-Day Production Trend</h2></div>
+        <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><h2>Weekly OEE Overview</h2></div>
+        <div id="oee-mini" class="oee-mini-grid"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── ORDERS TAB ── -->
+  <div id="tab-orders" class="tab-content hidden">
+    <section class="panel orders-panel">
+      <div class="panel-header">
+        <h2>Orders</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="delete-req-badge" class="delete-req-badge hidden"></span>
+          <button id="add-order-btn" class="btn btn-primary">+ New Order</button>
+        </div>
+      </div>
+      <div id="delete-requests-panel" class="delete-requests-panel hidden"></div>
+      <div class="order-filters">
+        <button class="filter-btn active" data-status="all">All</button>
+        <button class="filter-btn" data-status="pending">Pending</button>
+        <button class="filter-btn" data-status="in_progress">In Progress</button>
+        <button class="filter-btn" data-status="ready">Ready</button>
+        <button class="filter-btn" data-status="pickup_delivery">Pickup / Delivery</button>
+        <button class="filter-btn" data-status="done">Done</button>
+        <button class="filter-btn" id="filter-hidden-btn" data-status="hidden" style="display:none">Hidden</button>
+      </div>
+      <div class="table-wrap">
+        <table id="orders-table">
+          <thead>
+            <tr><th>Order #</th><th>Customer</th><th>Products</th><th>Qty</th><th>Due Date</th><th>Status</th><th>Station Progress</th><th>Files</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="orders-tbody"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── OEE TAB ── -->
+  <div id="tab-oee" class="tab-content hidden">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>OEE by Workstation — This Week</h2>
+        <span class="panel-note">OEE = Availability × Performance × Quality</span>
+      </div>
+      <div class="table-wrap">
+        <table id="oee-table">
+          <thead>
+            <tr>
+              <th>Workstation</th>
+              <th>OEE</th>
+              <th>Availability</th>
+              <th>Performance</th>
+              <th>Quality</th>
+              <th>Work Orders</th>
+              <th>Actual / Target</th>
+              <th>Rework</th>
+            </tr>
+          </thead>
+          <tbody id="oee-tbody"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="oee-legend">
+        <span class="oee-dot oee-green"></span> ≥ 65% Good &nbsp;
+        <span class="oee-dot oee-yellow"></span> 40–64% Fair &nbsp;
+        <span class="oee-dot oee-red"></span> &lt; 40% Poor
+      </div>
+    </section>
+  </div>
+
+  <!-- ── AI REPORT TAB ── -->
+  <div id="tab-report" class="tab-content hidden">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>AI Weekly Report</h2>
+        <button id="gen-report-btn" class="btn btn-primary">Generate This Week's Report</button>
+      </div>
+      <div id="report-content" class="report-content">
+        <div class="report-placeholder">Click "Generate This Week's Report" to get an AI analysis of this week's production data.</div>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:16px">
+      <div class="panel-header">
+        <h2>Report History</h2>
+        <button id="toggle-history" class="btn btn-outline btn-sm">Show</button>
+      </div>
+      <div id="history-list" class="history-list hidden"></div>
+    </section>
+  </div>
+
+  <!-- ── USERS TAB ── -->
+  <div id="tab-users" class="tab-content hidden">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>User Management</h2>
+        <button id="add-user-btn" class="btn btn-primary">+ Add User</button>
+      </div>
+      <div class="table-wrap">
+        <table id="users-table">
+          <thead>
+            <tr><th>Username</th><th>Display Name</th><th>Role</th><th>Created</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="users-tbody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Add Order Modal -->
+  <div id="order-modal" class="modal hidden">
+    <div class="modal-box modal-box-lg">
+      <h3>New Order</h3>
+      <div class="form-row cols-3">
+        <div class="form-group"><label>Order # *</label><input id="f-order-no" type="text" placeholder="e.g. JO-2024-001"></div>
+        <div class="form-group"><label>Customer *</label><input id="f-customer" type="text" placeholder="Customer name"></div>
+        <div class="form-group"><label>Due Date *</label><input id="f-due" type="date"></div>
+      </div>
+
+      <!-- Products -->
+      <div class="section-label">Products *</div>
+      <div id="items-list"></div>
+      <button type="button" id="add-item-btn" class="btn btn-outline btn-sm" style="margin-top:6px">+ Add Product</button>
+
+      <!-- Workstations -->
+      <div class="section-label" style="margin-top:16px">Workstations *</div>
+      <p class="form-note" style="margin:0 0 8px">Tick the workstations this order requires:</p>
+      <div class="ws-checkbox-grid" id="ws-checkboxes">
+        <label class="ws-check"><input type="checkbox" value="Cut" checked> Cut</label>
+        <label class="ws-check"><input type="checkbox" value="Edge" checked> Edge</label>
+        <label class="ws-check"><input type="checkbox" value="Boring" checked> Boring</label>
+        <label class="ws-check"><input type="checkbox" value="Cut-Curve" checked> Cut-Curve</label>
+        <label class="ws-check"><input type="checkbox" value="Edge-Curve" checked> Edge-Curve</label>
+        <label class="ws-check"><input type="checkbox" value="Assembly" checked> Assembly</label>
+        <label class="ws-check"><input type="checkbox" value="Packing" checked> Packing</label>
+      </div>
+
+      <!-- Attachments -->
+      <div class="section-label" style="margin-top:16px">Attachments</div>
+      <p class="form-note" style="margin:0 0 8px">PDF, JPG, PNG, DWG, etc. (max 20 MB each, up to 10 files)</p>
+      <input id="f-files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.dwg,.dxf,.doc,.docx,.xls,.xlsx" class="file-input">
+      <div id="file-preview" class="file-preview"></div>
+
+      <div class="modal-actions" style="margin-top:20px">
+        <button id="save-order-btn" class="btn btn-primary btn-lg">Create Order</button>
+        <button id="cancel-order-btn" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit User Modal -->
+  <div id="user-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3 id="user-modal-title">Add User</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Username *</label><input id="u-username" type="text" placeholder="login username"></div>
+        <div class="form-group"><label>Display Name</label><input id="u-display" type="text" placeholder="Full name"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Role *</label>
+          <select id="u-role">
+            <option value="worker">Worker</option>
+            <option value="admin">Admin</option>
+            <option value="super_admin">Super Admin (Boss)</option>
+          </select>
+        </div>
+        <div class="form-group"><label id="u-pwd-label">Password *</label><input id="u-password" type="password" placeholder="Set password"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="save-user-btn" class="btn btn-primary btn-lg">Save</button>
+        <button id="cancel-user-btn" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

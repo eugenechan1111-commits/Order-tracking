@@ -1,0 +1,18 @@
+# Environment — never commit real secrets
+.env
+.env.local
+.env.production
+
+# Dependencies
+node_modules/
+
+# Uploaded files — may contain customer documents
+public/uploads/
+
+# Claude Code dev config — contains local tool permissions
+.claude/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log

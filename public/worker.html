@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Office — Worker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+</head>
+<body class="worker-body">
+  <header class="worker-header">
+    <div class="header-brand">Amber Office</div>
+    <div class="header-actions">
+      <span id="header-worker" class="header-user"></span>
+      <button class="btn btn-outline btn-sm theme-toggle-btn" onclick="toggleTheme()">☾ Dark</button>
+      <button id="logout-btn" class="btn btn-outline btn-sm">Logout</button>
+    </div>
+  </header>
+
+  <!-- Station Selection -->
+  <div id="login-section" class="login-card">
+    <h2>Select Your Station</h2>
+    <div class="station-grid">
+      <button class="station-btn" data-ws="Cut">Cut</button>
+      <button class="station-btn" data-ws="Edge">Edge</button>
+      <button class="station-btn" data-ws="Boring">Boring</button>
+      <button class="station-btn" data-ws="Cut-Curve">Cut-Curve</button>
+      <button class="station-btn" data-ws="Edge-Curve">Edge-Curve</button>
+      <button class="station-btn" data-ws="Assembly">Assembly</button>
+      <button class="station-btn" data-ws="Packing">Packing</button>
+    </div>
+  </div>
+
+  <!-- Work Orders -->
+  <div id="work-section" class="hidden">
+    <div class="worker-toolbar">
+      <div>
+        <div id="ws-label" class="ws-badge"></div>
+        <div id="worker-label" class="worker-label-text"></div>
+      </div>
+      <button id="change-btn" class="btn btn-outline">Change Station</button>
+    </div>
+
+    <div class="filter-tabs">
+      <button class="tab-btn active" data-filter="pending,in_progress,paused">Active</button>
+      <button class="tab-btn" data-filter="completed">Done</button>
+    </div>
+
+    <div id="wo-list" class="wo-list">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Complete Modal -->
+  <div id="complete-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Complete Work Order</h3>
+      <p id="complete-qty-hint" class="form-note" style="margin-bottom:14px"></p>
+      <div class="form-group">
+        <label>Total Good Quantity Produced</label>
+        <input id="actual-qty" type="number" min="0" placeholder="Enter quantity">
+      </div>
+      <div class="form-group">
+        <label>Note (optional)</label>
+        <input id="complete-note" type="text" placeholder="Any remarks">
+      </div>
+      <div class="modal-actions">
+        <button id="confirm-complete" class="btn btn-success btn-lg">Confirm Complete</button>
+        <button id="cancel-complete" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause Modal -->
+  <div id="pause-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Pause Work Order</h3>
+      <div class="form-group">
+        <label>Reason (optional)</label>
+        <input id="pause-note" type="text" placeholder="e.g. Material shortage, machine issue">
+      </div>
+      <div class="modal-actions">
+        <button id="confirm-pause" class="btn btn-warning btn-lg">Confirm Pause</button>
+        <button id="cancel-pause" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rework Modal -->
+  <div id="rework-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Log Rework</h3>
+      <p class="form-note" style="margin-bottom:16px">Rework units will be tracked. The work order stays active until the full target quantity is produced.</p>
+      <div class="form-group">
+        <label>Rework Quantity</label>
+        <input id="rework-qty" type="number" min="1" placeholder="How many units need rework?">
+      </div>
+      <div class="form-group">
+        <label>Reason *</label>
+        <input id="rework-note" type="text" placeholder="Reason (required, e.g. dimension off, surface defect)">
+      </div>
+      <div class="modal-actions">
+        <button id="confirm-rework" class="btn btn-warning btn-lg">Log Rework</button>
+        <button id="cancel-rework" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="worker.js"></script>
+</body>
+</html>
