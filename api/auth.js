@@ -50,6 +50,8 @@ router.get('/users', requireAdmin, async (req, res) => {
 router.post('/users', requireAdmin, async (req, res) => {
   const { username, password, role, display_name } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+  if (role === 'super_admin' && req.user.role !== 'super_admin')
+    return res.status(403).json({ error: 'Only Boss can create a Super Admin user' });
   const password_hash = await bcrypt.hash(password, 10);
   const { data, error } = await supabase
     .from('users')
@@ -59,9 +61,14 @@ router.post('/users', requireAdmin, async (req, res) => {
   res.status(201).json(data);
 });
 
-// PATCH /api/auth/users/:id — admin updates user (password or display_name)
+// PATCH /api/auth/users/:id — admin updates user
 router.patch('/users/:id', requireAdmin, async (req, res) => {
   const { password, display_name, role } = req.body;
+  if (req.user.role !== 'super_admin') {
+    const { data: target } = await supabase.from('users').select('role').eq('id', req.params.id).single();
+    if (target?.role === 'super_admin') return res.status(403).json({ error: 'Only Boss can edit a Super Admin user' });
+    if (role === 'super_admin') return res.status(403).json({ error: 'Only Boss can assign Super Admin role' });
+  }
   const updates = {};
   if (display_name) updates.display_name = display_name;
   if (role) updates.role = role;
@@ -75,6 +82,10 @@ router.patch('/users/:id', requireAdmin, async (req, res) => {
 
 // DELETE /api/auth/users/:id — admin deletes user
 router.delete('/users/:id', requireAdmin, async (req, res) => {
+  if (req.user.role !== 'super_admin') {
+    const { data: target } = await supabase.from('users').select('role').eq('id', req.params.id).single();
+    if (target?.role === 'super_admin') return res.status(403).json({ error: 'Only Boss can delete a Super Admin user' });
+  }
   const { error } = await supabase.from('users').delete().eq('id', req.params.id);
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });

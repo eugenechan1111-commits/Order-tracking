@@ -437,17 +437,28 @@ async function loadUsers() {
   const res = await fetch('/api/auth/users', { headers: authHeaders() });
   if (!res.ok) { document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" class="error">Failed to load users</td></tr>'; return; }
   allUsers = await res.json();
-  document.getElementById('users-tbody').innerHTML = allUsers.map(u => `
-    <tr>
+  const isSuperAdmin = userRole === 'super_admin';
+  document.getElementById('users-tbody').innerHTML = allUsers.map(u => {
+    const isProtected = u.role === 'super_admin' && !isSuperAdmin;
+    const deleteBtn = isProtected
+      ? `<button class="btn btn-sm btn-danger" disabled style="opacity:.4;cursor:not-allowed" title="Only Boss can delete Super Admin">Delete</button>`
+      : `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}','${u.username}')">Delete</button>`;
+    const editBtn = isProtected
+      ? `<button class="btn btn-sm btn-outline" disabled style="opacity:.4;cursor:not-allowed" title="Only Boss can edit Super Admin">Edit</button>`
+      : `<button class="btn btn-sm btn-outline" onclick="openEditUser('${u.id}')">Edit</button>`;
+    return `<tr>
       <td><strong>${u.username}</strong></td>
       <td>${u.display_name || '—'}</td>
       <td><span class="status-badge ${u.role === 'admin' ? 'status-in_progress' : 'status-pending'}">${u.role}</span></td>
       <td>${new Date(u.created_at).toLocaleDateString()}</td>
-      <td>
-        <button class="btn btn-sm btn-outline" onclick="openEditUser('${u.id}')">Edit</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}','${u.username}')">Delete</button>
-      </td>
-    </tr>`).join('');
+      <td>${editBtn} ${deleteBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateRoleDropdown() {
+  const opt = document.querySelector('#u-role option[value="super_admin"]');
+  if (opt) opt.style.display = userRole === 'super_admin' ? '' : 'none';
 }
 
 document.getElementById('add-user-btn').addEventListener('click', () => {
@@ -459,6 +470,7 @@ document.getElementById('add-user-btn').addEventListener('click', () => {
   document.getElementById('u-password').value = '';
   document.getElementById('u-pwd-label').textContent = 'Password *';
   document.getElementById('u-username').disabled = false;
+  updateRoleDropdown();
   document.getElementById('user-modal').classList.remove('hidden');
 });
 
@@ -473,6 +485,7 @@ function openEditUser(id) {
   document.getElementById('u-role').value = u.role;
   document.getElementById('u-password').value = '';
   document.getElementById('u-pwd-label').textContent = 'New Password (leave blank to keep)';
+  updateRoleDropdown();
   document.getElementById('user-modal').classList.remove('hidden');
 }
 
@@ -504,7 +517,8 @@ document.getElementById('save-user-btn').addEventListener('click', async () => {
 
 async function deleteUser(id, username) {
   if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
-  await fetch(`/api/auth/users/${id}`, { method: 'DELETE', headers: authHeaders() });
+  const res = await fetch(`/api/auth/users/${id}`, { method: 'DELETE', headers: authHeaders() });
+  if (!res.ok) { const err = await res.json(); alert('Error: ' + err.error); return; }
   loadUsers();
 }
 
