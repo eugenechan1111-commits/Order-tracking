@@ -179,9 +179,10 @@ function renderOrders() {
       : o.product || '—';
 
     const attachments = o.attachments || [];
-    const filesCell = attachments.length
+    const badge = attachments.length
       ? `<span class="attach-badge" title="${attachments.map(a => a.name).join('\n')}">📎 ${attachments.length}</span>`
-      : '—';
+      : '';
+    const filesCell = `${badge}<button class="btn btn-sm btn-outline upload-btn" title="Upload files" onclick="uploadFilesToOrder('${o.id}')">+</button>`;
 
     const urgentBadge = o.urgent ? `<span class="urgent-badge">URGENT</span>` : '';
     const deleteReqBadge = o.delete_requested ? `<span class="del-req-badge">Del. Requested</span>` : '';
@@ -226,6 +227,22 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.add('active'); currentStatusFilter = btn.dataset.status; loadOrders();
   });
 });
+
+function uploadFilesToOrder(orderId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.accept = '.pdf,.jpg,.jpeg,.png,.gif,.dwg,.dxf,.doc,.docx,.xls,.xlsx';
+  input.onchange = async () => {
+    if (!input.files.length) return;
+    const fd = new FormData();
+    for (const f of input.files) fd.append('files', f);
+    const res = await fetch(`/api/orders/${orderId}/attachments`, { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ao_token')}` }, body: fd });
+    if (!res.ok) { alert('Upload failed'); return; }
+    loadOrders();
+  };
+  input.click();
+}
 
 async function advanceStatus(id, newStatus) {
   const labels = { in_progress: 'Start Production', ready: 'Mark as Ready', pickup_delivery: 'Mark as Dispatched', done: 'Mark as Done' };
