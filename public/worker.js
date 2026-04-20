@@ -98,6 +98,7 @@ function renderWorkOrders(list) {
       <div class="wo-meta">
         <span>Customer: ${order.customer || '—'}</span>
         <span class="${isOverdue ? 'overdue' : ''}">Due: ${dueDate || '—'}${isOverdue ? ' ⚠️' : ''}</span>
+        ${(order.attachments || []).length ? `<span class="attach-badge" style="cursor:pointer" onclick='showWorkerAttachments(${JSON.stringify(order.attachments || [])})'>📎 ${order.attachments.length} file${order.attachments.length > 1 ? 's' : ''}</span>` : ''}
       </div>
 
       <div class="wo-progress-row">
@@ -241,3 +242,13 @@ $('cancel-rework').addEventListener('click', () => $('rework-modal').classList.a
 
 // Auto-refresh every 60s
 setInterval(() => { if (currentStation) loadWorkOrders(); }, 60000);
+
+function showWorkerAttachments(attachments) {
+  const list = attachments.map(a =>
+    a.url
+      ? `<li><a href="${a.url}" target="_blank" rel="noopener" style="color:var(--blue);word-break:break-all">${a.name}</a> <span style="color:#888;font-size:12px">(${(a.size/1024).toFixed(1)} KB)</span></li>`
+      : `<li>${a.name}</li>`
+  ).join('');
+  $('worker-attach-list').innerHTML = `<ul style="padding-left:20px;line-height:2.2;font-size:15px">${list}</ul>`;
+  $('worker-attach-modal').classList.remove('hidden');
+}
