@@ -3,8 +3,15 @@ const token = localStorage.getItem('ao_token');
 const workerName = localStorage.getItem('ao_display_name') || localStorage.getItem('ao_username') || 'Worker';
 if (!token) { window.location.href = '/login'; }
 
-// Pre-warm the serverless function immediately on page load
-fetch('/api/ping').catch(() => {});
+// Pre-warm: fire a real lightweight query immediately so the serverless function is hot
+const savedStation = localStorage.getItem('ao_station');
+if (savedStation) {
+  fetch(`/api/work-orders?workstation=${encodeURIComponent(savedStation)}&status=pending,in_progress,paused`, {
+    headers: { Authorization: `Bearer ${token}` }
+  }).catch(() => {});
+} else {
+  fetch('/api/ping').catch(() => {});
+}
 
 document.getElementById('header-worker').textContent = workerName;
 document.getElementById('logout-btn').addEventListener('click', () => {
@@ -26,6 +33,7 @@ const $ = id => document.getElementById(id);
 document.querySelectorAll('.station-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     currentStation = btn.dataset.ws;
+    localStorage.setItem('ao_station', currentStation);
     enterWorkMode();
   });
 });
@@ -42,7 +50,14 @@ $('change-btn').addEventListener('click', () => {
   $('work-section').classList.add('hidden');
   $('login-section').classList.remove('hidden');
   currentStation = '';
+  localStorage.removeItem('ao_station');
 });
+
+// Auto-restore station from last session
+if (savedStation) {
+  currentStation = savedStation;
+  enterWorkMode();
+}
 
 // Filter tabs
 document.querySelectorAll('.tab-btn').forEach(btn => {
