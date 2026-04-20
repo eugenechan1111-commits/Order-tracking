@@ -128,6 +128,7 @@ router.post('/:id/rework', requireAuth, async (req, res) => {
     const wo = demoFindWO(req.params.id);
     if (!wo) return res.status(404).json({ error: 'Not found' });
     wo.rework_qty = (wo.rework_qty || 0) + rework_qty;
+    wo.status = 'paused';
     return res.json(wo);
   }
 
@@ -137,7 +138,7 @@ router.post('/:id/rework', requireAuth, async (req, res) => {
 
   const newReworkQty = (current?.rework_qty || 0) + rework_qty;
   const { data, error } = await supabase
-    .from('work_orders').update({ rework_qty: newReworkQty }).eq('id', req.params.id).select().single();
+    .from('work_orders').update({ rework_qty: newReworkQty, status: 'paused' }).eq('id', req.params.id).select().single();
   if (error) return res.status(500).json({ error: error.message });
 
   await supabase.from('work_logs').insert({ work_order_id: req.params.id, action: 'reject', worker_name, note, qty: rework_qty });
