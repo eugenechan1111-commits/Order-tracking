@@ -7,6 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/api/ping', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', require('./api/auth'));
 app.use('/api/orders', require('./api/orders'));
 app.use('/api/work-orders', require('./api/workorders'));

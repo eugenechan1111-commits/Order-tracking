@@ -3,6 +3,9 @@ const token = localStorage.getItem('ao_token');
 const workerName = localStorage.getItem('ao_display_name') || localStorage.getItem('ao_username') || 'Worker';
 if (!token) { window.location.href = '/login'; }
 
+// Pre-warm the serverless function immediately on page load
+fetch('/api/ping').catch(() => {});
+
 document.getElementById('header-worker').textContent = workerName;
 document.getElementById('logout-btn').addEventListener('click', () => {
   localStorage.clear(); window.location.href = '/login';
@@ -52,15 +55,23 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 async function loadWorkOrders() {
-  $('wo-list').innerHTML = '<div class="loading">Loading...</div>';
+  $('wo-list').innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
   try {
     const params = new URLSearchParams({ workstation: currentStation, status: currentFilter });
-    const res = await fetch(`/api/work-orders?${params}`, { headers: authHeaders() });
+    const res = await fetch(`/api/work-orders?${params}`, { headers: authHeaders(), signal: controller.signal });
+    clearTimeout(timeout);
     if (res.status === 401) { window.location.href = '/login'; return; }
     const list = await res.json();
     renderWorkOrders(list);
   } catch (e) {
-    $('wo-list').innerHTML = `<div class="error">Load failed: ${e.message}</div>`;
+    clearTimeout(timeout);
+    const msg = e.name === 'AbortError' ? 'Request timed out' : e.message;
+    $('wo-list').innerHTML = `<div class="error" style="text-align:center;padding:32px">
+      <div style="margin-bottom:12px">⚠️ ${msg}</div>
+      <button class="btn btn-primary" onclick="loadWorkOrders()">Retry</button>
+    </div>`;
   }
 }
 
