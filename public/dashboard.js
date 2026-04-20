@@ -238,7 +238,7 @@ function uploadFilesToOrder(orderId) {
     const fd = new FormData();
     for (const f of input.files) fd.append('files', f);
     const res = await fetch(`/api/orders/${orderId}/attachments`, { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ao_token')}` }, body: fd });
-    if (!res.ok) { alert('Upload failed'); return; }
+    if (!res.ok) { const err = await res.json().catch(() => ({})); alert('Upload failed: ' + (err.error || res.status)); return; }
     loadOrders();
   };
   input.click();

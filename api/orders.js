@@ -112,7 +112,10 @@ router.post('/:id/attachments', requireAuth, upload.array('files', 10), async (r
     const { error: upErr } = await supabase.storage
       .from('order-attachments')
       .upload(storagePath, f.buffer, { contentType: f.mimetype, upsert: false });
-    if (upErr) return res.status(500).json({ error: `Storage upload failed: ${upErr.message}` });
+    if (upErr) {
+      console.error('Storage upload error:', JSON.stringify(upErr));
+      return res.status(500).json({ error: `Storage upload failed: ${upErr.message} (status: ${upErr.statusCode})` });
+    }
 
     const { data: urlData } = supabase.storage.from('order-attachments').getPublicUrl(storagePath);
     newAttachments.push({
