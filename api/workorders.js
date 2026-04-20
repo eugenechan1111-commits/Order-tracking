@@ -153,16 +153,18 @@ router.post('/:id/rework-done', requireAuth, async (req, res) => {
     const wo = demoFindWO(req.params.id);
     if (!wo) return res.status(404).json({ error: 'Not found' });
     wo.rework_qty = Math.max(0, (wo.rework_qty || 0) - qty);
+    wo.actual_qty = (wo.actual_qty || 0) + qty;
     return res.json(wo);
   }
 
   const { data: current, error: fetchErr } = await supabase
-    .from('work_orders').select('rework_qty').eq('id', req.params.id).single();
+    .from('work_orders').select('rework_qty, actual_qty').eq('id', req.params.id).single();
   if (fetchErr) return res.status(500).json({ error: fetchErr.message });
 
   const newReworkQty = Math.max(0, (current?.rework_qty || 0) - qty);
+  const newActualQty = (current?.actual_qty || 0) + qty;
   const { data, error } = await supabase
-    .from('work_orders').update({ rework_qty: newReworkQty }).eq('id', req.params.id).select().single();
+    .from('work_orders').update({ rework_qty: newReworkQty, actual_qty: newActualQty }).eq('id', req.params.id).select().single();
   if (error) return res.status(500).json({ error: error.message });
 
   await supabase.from('work_logs').insert({ work_order_id: req.params.id, action: 'rework_done', worker_name, note: note || '', qty });
