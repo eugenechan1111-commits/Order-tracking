@@ -122,13 +122,13 @@ function renderWorkOrders(list) {
         ${wo.status === 'in_progress' ? `
           <button class="btn btn-outline" onclick="pauseWO('${wo.id}')">⏸ Pause</button>
           <button class="btn btn-danger" onclick="openReject('${wo.id}')">✗ Reject</button>
-          ${rework > 0 ? `<button class="btn btn-warning" onclick="openRework('${wo.id}')">↩ Rework (${rework})</button>` : ''}
+          ${rework > 0 ? `<button class="btn btn-warning" onclick="resumeWO('${wo.id}')">↩ Rework (${rework})</button>` : ''}
           <button class="btn btn-success btn-lg" onclick="openComplete('${wo.id}', ${target}, ${actual})">✓ Complete</button>
         ` : ''}
         ${wo.status === 'paused' ? `
           <button class="btn btn-primary" onclick="resumeWO('${wo.id}')">▶ Resume</button>
-          <button class="btn btn-danger" onclick="openReject('${wo.id}')">✗ Reject</button>
-          ${rework > 0 ? `<button class="btn btn-warning" onclick="openRework('${wo.id}')">↩ Rework (${rework})</button>` : ''}
+          <button class="btn btn-danger" disabled style="opacity:.4;cursor:not-allowed">✗ Reject</button>
+          ${rework > 0 ? `<button class="btn btn-warning" onclick="resumeWO('${wo.id}')">↩ Rework (${rework})</button>` : ''}
           <button class="btn btn-success btn-lg" onclick="openComplete('${wo.id}', ${target}, ${actual})">✓ Complete</button>
         ` : ''}
       </div>
