@@ -15,7 +15,7 @@ router.get('/', requireAuth, async (req, res) => {
   const { workstation, status } = req.query;
   let query = supabase
     .from('work_orders')
-    .select('*, orders(order_no, customer, product, quantity, due_date, status, urgent)')
+    .select('*, orders(order_no, customer, product, quantity, due_date, status, urgent, attachments)')
     .order('created_at', { ascending: true });
   if (workstation) query = query.eq('workstation', workstation);
   if (status) {
