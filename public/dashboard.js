@@ -179,8 +179,9 @@ function renderOrders() {
       : o.product || '—';
 
     const attachments = o.attachments || [];
+    const attachJson = encodeURIComponent(JSON.stringify(attachments));
     const badge = attachments.length
-      ? `<span class="attach-badge" title="${attachments.map(a => a.name).join('\n')}">📎 ${attachments.length}</span>`
+      ? `<span class="attach-badge" onclick="showAttachments('${attachJson}')" style="cursor:pointer" title="Click to view files">📎 ${attachments.length}</span>`
       : '';
     const filesCell = `${badge}<button class="btn btn-sm btn-outline upload-btn" title="Upload files" onclick="uploadFilesToOrder('${o.id}')">+</button>`;
 
@@ -227,6 +228,17 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.add('active'); currentStatusFilter = btn.dataset.status; loadOrders();
   });
 });
+
+function showAttachments(attachJson) {
+  const attachments = JSON.parse(decodeURIComponent(attachJson));
+  const list = attachments.map(a =>
+    a.url
+      ? `<li><a href="${a.url}" target="_blank" rel="noopener">${a.name}</a> <span style="color:var(--gray-400);font-size:11px">(${(a.size/1024).toFixed(1)} KB)</span></li>`
+      : `<li>${a.name} <span style="color:var(--gray-400);font-size:11px">(no preview)</span></li>`
+  ).join('');
+  document.getElementById('attach-modal-list').innerHTML = `<ul style="padding-left:18px;line-height:2">${list}</ul>`;
+  document.getElementById('attach-modal').classList.remove('hidden');
+}
 
 function uploadFilesToOrder(orderId) {
   const input = document.createElement('input');
