@@ -86,18 +86,38 @@
     </div>
   </div>
 
-  <!-- Rework Modal -->
-  <div id="rework-modal" class="modal hidden">
+  <!-- Reject Modal -->
+  <div id="reject-modal" class="modal hidden">
     <div class="modal-box">
-      <h3>Log Rework</h3>
-      <p class="form-note" style="margin-bottom:16px">Rework units will be tracked. The work order stays active until the full target quantity is produced.</p>
+      <h3>Log Rejected Units</h3>
+      <p class="form-note" style="margin-bottom:16px">Rejected units reduce OEE quality. The work order stays active until the full target is met.</p>
       <div class="form-group">
-        <label>Rework Quantity</label>
-        <input id="rework-qty" type="number" min="1" placeholder="How many units need rework?">
+        <label>Rejected Quantity</label>
+        <input id="reject-qty" type="number" min="1" placeholder="How many units are rejected?">
       </div>
       <div class="form-group">
         <label>Reason *</label>
-        <input id="rework-note" type="text" placeholder="Reason (required, e.g. dimension off, surface defect)">
+        <input id="reject-note" type="text" placeholder="e.g. dimension off, surface defect">
+      </div>
+      <div class="modal-actions">
+        <button id="confirm-reject" class="btn btn-danger btn-lg">Log Reject</button>
+        <button id="cancel-reject" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rework Modal (only when rejected units exist) -->
+  <div id="rework-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Log Reworked Units</h3>
+      <p class="form-note" style="margin-bottom:16px">Enter how many previously rejected units you have successfully fixed.</p>
+      <div class="form-group">
+        <label>Reworked Quantity</label>
+        <input id="rework-qty" type="number" min="1" placeholder="How many units were fixed?">
+      </div>
+      <div class="form-group">
+        <label>Note</label>
+        <input id="rework-note" type="text" placeholder="Optional note">
       </div>
       <div class="modal-actions">
         <button id="confirm-rework" class="btn btn-warning btn-lg">Log Rework</button>

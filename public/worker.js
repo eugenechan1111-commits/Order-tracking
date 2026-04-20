@@ -121,13 +121,14 @@ function renderWorkOrders(list) {
         ` : ''}
         ${wo.status === 'in_progress' ? `
           <button class="btn btn-outline" onclick="pauseWO('${wo.id}')">⏸ Pause</button>
-          <button class="btn btn-warning" onclick="openRework('${wo.id}', ${target})">↩ Rework</button>
-          <button class="btn btn-success btn-lg" onclick="openComplete('${wo.id}', ${target}, ${actual})"
-            ${!canComplete && actual > 0 ? '' : ''}>✓ Complete</button>
+          <button class="btn btn-danger" onclick="openReject('${wo.id}')">✗ Reject</button>
+          ${rework > 0 ? `<button class="btn btn-warning" onclick="openRework('${wo.id}')">↩ Rework (${rework})</button>` : ''}
+          <button class="btn btn-success btn-lg" onclick="openComplete('${wo.id}', ${target}, ${actual})">✓ Complete</button>
         ` : ''}
         ${wo.status === 'paused' ? `
           <button class="btn btn-primary" onclick="resumeWO('${wo.id}')">▶ Resume</button>
-          <button class="btn btn-warning" onclick="openRework('${wo.id}', ${target})">↩ Rework</button>
+          <button class="btn btn-danger" onclick="openReject('${wo.id}')">✗ Reject</button>
+          ${rework > 0 ? `<button class="btn btn-warning" onclick="openRework('${wo.id}')">↩ Rework (${rework})</button>` : ''}
           <button class="btn btn-success btn-lg" onclick="openComplete('${wo.id}', ${target}, ${actual})">✓ Complete</button>
         ` : ''}
       </div>
@@ -167,7 +168,7 @@ $('confirm-complete').addEventListener('click', async () => {
 
   if (qty < pendingTargetQty) {
     const shortfall = pendingTargetQty - qty;
-    alert(`Cannot complete: quantity ${qty} is less than target ${pendingTargetQty}.\nNeed ${shortfall} more units.\n\nTip: Use "Rework" to log defective units that need to be remade.`);
+    alert(`Cannot complete: quantity ${qty} is less than target ${pendingTargetQty}.\nNeed ${shortfall} more units.\n\nTip: Use "Reject" to log defective units.`);
     return;
   }
 
@@ -208,10 +209,33 @@ $('confirm-pause').addEventListener('click', async () => {
 
 $('cancel-pause').addEventListener('click', () => $('pause-modal').classList.add('hidden'));
 
-// ── Rework ──
-function openRework(id, targetQty) {
+// ── Reject ──
+function openReject(id) {
   pendingActionId = id;
-  pendingTargetQty = targetQty;
+  $('reject-qty').value = '';
+  $('reject-note').value = '';
+  $('reject-modal').classList.remove('hidden');
+}
+
+$('confirm-reject').addEventListener('click', async () => {
+  const qty = parseInt($('reject-qty').value);
+  const note = $('reject-note').value.trim();
+  if (isNaN(qty) || qty <= 0) { alert('Please enter rejected quantity'); return; }
+  if (!note) { alert('Please enter a reason'); return; }
+  $('reject-modal').classList.add('hidden');
+  const res = await fetch(`/api/work-orders/${pendingActionId}/rework`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ worker_name: workerName, rework_qty: qty, note })
+  });
+  if (!res.ok) { const err = await res.json(); alert(err.error || 'Could not log rejection'); return; }
+  loadWorkOrders();
+});
+
+$('cancel-reject').addEventListener('click', () => $('reject-modal').classList.add('hidden'));
+
+// ── Rework (fix rejected units) ──
+function openRework(id) {
+  pendingActionId = id;
   $('rework-qty').value = '';
   $('rework-note').value = '';
   $('rework-modal').classList.remove('hidden');
@@ -220,21 +244,13 @@ function openRework(id, targetQty) {
 $('confirm-rework').addEventListener('click', async () => {
   const qty = parseInt($('rework-qty').value);
   const note = $('rework-note').value.trim();
-  if (isNaN(qty) || qty <= 0) { alert('Please enter rework quantity'); return; }
-  if (!note) { alert('Please enter the reason for rework'); return; }
-
+  if (isNaN(qty) || qty <= 0) { alert('Please enter reworked quantity'); return; }
   $('rework-modal').classList.add('hidden');
-
-  const res = await fetch(`/api/work-orders/${pendingActionId}/rework`, {
+  const res = await fetch(`/api/work-orders/${pendingActionId}/rework-done`, {
     method: 'POST', headers: authHeaders(),
-    body: JSON.stringify({ worker_name: workerName, rework_qty: qty, note })
+    body: JSON.stringify({ worker_name: workerName, qty, note })
   });
-
-  if (!res.ok) {
-    const err = await res.json();
-    alert(err.error || 'Could not log rework');
-    return;
-  }
+  if (!res.ok) { const err = await res.json(); alert(err.error || 'Could not log rework'); return; }
   loadWorkOrders();
 });
 

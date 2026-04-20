@@ -118,17 +118,16 @@ router.post('/:id/complete', requireAuth, async (req, res) => {
   res.json(data);
 });
 
-// Rework — records bad qty, keeps work order in_progress for more production
+// Reject — records defective/rejected qty, OEE quality tracks this permanently
 router.post('/:id/rework', requireAuth, async (req, res) => {
   const { worker_name, rework_qty, note } = req.body;
-  if (!rework_qty || rework_qty <= 0) return res.status(400).json({ error: 'Rework quantity must be greater than 0' });
-  if (!note) return res.status(400).json({ error: 'Reason is required for rework' });
+  if (!rework_qty || rework_qty <= 0) return res.status(400).json({ error: 'Reject quantity must be greater than 0' });
+  if (!note) return res.status(400).json({ error: 'Reason is required' });
 
   if (!process.env.SUPABASE_URL) {
     const wo = demoFindWO(req.params.id);
     if (!wo) return res.status(404).json({ error: 'Not found' });
     wo.rework_qty = (wo.rework_qty || 0) + rework_qty;
-    wo.status = 'in_progress';
     return res.json(wo);
   }
 
@@ -138,12 +137,35 @@ router.post('/:id/rework', requireAuth, async (req, res) => {
 
   const newReworkQty = (current?.rework_qty || 0) + rework_qty;
   const { data, error } = await supabase
-    .from('work_orders')
-    .update({ rework_qty: newReworkQty, status: 'in_progress' })
-    .eq('id', req.params.id).select().single();
+    .from('work_orders').update({ rework_qty: newReworkQty }).eq('id', req.params.id).select().single();
   if (error) return res.status(500).json({ error: error.message });
 
-  await supabase.from('work_logs').insert({ work_order_id: req.params.id, action: 'rework', worker_name, note, qty: rework_qty });
+  await supabase.from('work_logs').insert({ work_order_id: req.params.id, action: 'reject', worker_name, note, qty: rework_qty });
+  res.json(data);
+});
+
+// Rework-done — worker fixed rejected pieces; reduces rework_qty
+router.post('/:id/rework-done', requireAuth, async (req, res) => {
+  const { worker_name, qty, note } = req.body;
+  if (!qty || qty <= 0) return res.status(400).json({ error: 'Quantity must be greater than 0' });
+
+  if (!process.env.SUPABASE_URL) {
+    const wo = demoFindWO(req.params.id);
+    if (!wo) return res.status(404).json({ error: 'Not found' });
+    wo.rework_qty = Math.max(0, (wo.rework_qty || 0) - qty);
+    return res.json(wo);
+  }
+
+  const { data: current, error: fetchErr } = await supabase
+    .from('work_orders').select('rework_qty').eq('id', req.params.id).single();
+  if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+
+  const newReworkQty = Math.max(0, (current?.rework_qty || 0) - qty);
+  const { data, error } = await supabase
+    .from('work_orders').update({ rework_qty: newReworkQty }).eq('id', req.params.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  await supabase.from('work_logs').insert({ work_order_id: req.params.id, action: 'rework_done', worker_name, note: note || '', qty });
   res.json(data);
 });
 
