@@ -1,26 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const supabase = require('../lib/supabase');
 const { requireAuth, requireAdmin, requireSuperAdmin } = require('../lib/auth');
 const { DEMO_ORDERS } = require('../lib/demo-data');
 
 const WORKSTATIONS = ['Cut', 'Edge', 'Boring', 'Cut-Curve', 'Edge-Curve', 'Assembly', 'Packing'];
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../public/uploads', req.params.id);
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, Date.now() + '_' + safe);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 router.get('/', requireAuth, async (req, res) => {
   const includeHidden = req.query.include_hidden === 'true';
@@ -109,19 +96,38 @@ router.post('/', requireAuth, async (req, res) => {
 router.post('/:id/attachments', requireAuth, upload.array('files', 10), async (req, res) => {
   if (!req.files || !req.files.length) return res.status(400).json({ error: 'No files uploaded' });
 
-  const newAttachments = req.files.map(f => ({
-    name: f.originalname,
-    filename: f.filename,
-    url: `/uploads/${req.params.id}/${f.filename}`,
-    type: f.mimetype,
-    size: f.size
-  }));
+  if (!process.env.SUPABASE_URL) {
+    const newAttachments = req.files.map(f => ({
+      name: f.originalname, filename: f.originalname, url: null, type: f.mimetype, size: f.size
+    }));
+    return res.json({ attachments: newAttachments });
+  }
 
-  if (!process.env.SUPABASE_URL) return res.json({ attachments: newAttachments });
+  const orderId = req.params.id;
+  const newAttachments = [];
 
-  const { data: order } = await supabase.from('orders').select('attachments').eq('id', req.params.id).single();
+  for (const f of req.files) {
+    const safe = f.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${orderId}/${Date.now()}_${safe}`;
+    const { error: upErr } = await supabase.storage
+      .from('order-attachments')
+      .upload(storagePath, f.buffer, { contentType: f.mimetype, upsert: false });
+    if (upErr) return res.status(500).json({ error: `Storage upload failed: ${upErr.message}` });
+
+    const { data: urlData } = supabase.storage.from('order-attachments').getPublicUrl(storagePath);
+    newAttachments.push({
+      name: f.originalname,
+      filename: safe,
+      url: urlData.publicUrl,
+      type: f.mimetype,
+      size: f.size
+    });
+  }
+
+  const { data: order } = await supabase.from('orders').select('attachments').eq('id', orderId).single();
   const updated = [...(order?.attachments || []), ...newAttachments];
-  await supabase.from('orders').update({ attachments: updated }).eq('id', req.params.id);
+  const { error: dbErr } = await supabase.from('orders').update({ attachments: updated }).eq('id', orderId);
+  if (dbErr) return res.status(500).json({ error: dbErr.message });
   res.json({ attachments: updated });
 });
 
