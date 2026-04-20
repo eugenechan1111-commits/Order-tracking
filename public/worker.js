@@ -191,18 +191,33 @@ $('confirm-complete').addEventListener('click', async () => {
 $('cancel-complete').addEventListener('click', () => $('complete-modal').classList.add('hidden'));
 
 // ── Pause ──
+let pauseReason = '';
+
 function pauseWO(id) {
   pendingActionId = id;
+  pauseReason = '';
+  $('pause-qty').value = '';
   $('pause-note').value = '';
+  document.querySelectorAll('.reason-btn').forEach(b => b.classList.remove('active'));
   $('pause-modal').classList.remove('hidden');
 }
 
+document.querySelectorAll('.reason-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.reason-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    pauseReason = btn.dataset.reason;
+  });
+});
+
 $('confirm-pause').addEventListener('click', async () => {
-  const note = $('pause-note').value.trim();
+  const qty = $('pause-qty').value !== '' ? parseInt($('pause-qty').value) : null;
+  const extra = $('pause-note').value.trim();
+  const note = [pauseReason, extra].filter(Boolean).join(' — ');
   $('pause-modal').classList.add('hidden');
   await fetch(`/api/work-orders/${pendingActionId}/pause`, {
     method: 'POST', headers: authHeaders(),
-    body: JSON.stringify({ worker_name: workerName, note })
+    body: JSON.stringify({ worker_name: workerName, note, actual_qty: qty })
   });
   loadWorkOrders();
 });

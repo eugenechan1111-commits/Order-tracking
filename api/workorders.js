@@ -50,15 +50,18 @@ router.post('/:id/start', requireAuth, async (req, res) => {
 });
 
 router.post('/:id/pause', requireAuth, async (req, res) => {
-  const { worker_name, note } = req.body;
+  const { worker_name, note, actual_qty } = req.body;
   if (!process.env.SUPABASE_URL) {
     const wo = demoFindWO(req.params.id);
     if (!wo) return res.status(404).json({ error: 'Not found' });
     wo.status = 'paused';
+    if (actual_qty != null && actual_qty >= 0) wo.actual_qty = actual_qty;
     return res.json(wo);
   }
+  const updates = { status: 'paused' };
+  if (actual_qty != null && actual_qty >= 0) updates.actual_qty = actual_qty;
   const { data, error } = await supabase
-    .from('work_orders').update({ status: 'paused' }).eq('id', req.params.id).select().single();
+    .from('work_orders').update(updates).eq('id', req.params.id).select().single();
   if (error) return res.status(500).json({ error: error.message });
   await supabase.from('work_logs').insert({ work_order_id: req.params.id, action: 'pause', worker_name, note });
   res.json(data);

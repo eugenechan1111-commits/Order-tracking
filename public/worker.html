@@ -76,8 +76,18 @@
     <div class="modal-box">
       <h3>Pause Work Order</h3>
       <div class="form-group">
-        <label>Reason (optional)</label>
-        <input id="pause-note" type="text" placeholder="e.g. Material shortage, machine issue">
+        <label>Units Done So Far</label>
+        <input id="pause-qty" type="number" min="0" placeholder="How many units completed so far?">
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <div class="reason-btns">
+          <button type="button" class="reason-btn" data-reason="Rest">Rest</button>
+          <button type="button" class="reason-btn" data-reason="Material short">Material short</button>
+          <button type="button" class="reason-btn" data-reason="Machine down">Machine down</button>
+          <button type="button" class="reason-btn" data-reason="Other">Other</button>
+        </div>
+        <input id="pause-note" type="text" placeholder="Additional details (optional)" style="margin-top:8px">
       </div>
       <div class="modal-actions">
         <button id="confirm-pause" class="btn btn-warning btn-lg">Confirm Pause</button>
