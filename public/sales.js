@@ -110,12 +110,19 @@ function renderSalesOrders(list) {
   document.getElementById('so-table-wrap').innerHTML = `
     <table class="data-table">
       <thead><tr>
-        <th>SO No</th><th>Customer</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Status</th><th>Next Action</th><th>Actions</th>
+        <th>SO No</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Status</th><th>Next Action</th><th>Actions</th>
       </tr></thead>
-      <tbody>${list.map(so => `
+      <tbody>${list.map(so => {
+        const items = so.items || [];
+        const first = items[0]?.product || items[0]?.description || items[0]?.name || '—';
+        const itemSummary = items.length > 1 ? `${first} <span style="color:var(--text-muted);font-size:11px">(+${items.length - 1} more)</span>` : first;
+        return `
         <tr>
           <td><strong>${so.so_no}</strong></td>
           <td>${so.customers?.company_name || '—'}</td>
+          <td style="max-width:180px">
+            <span style="cursor:pointer;color:var(--primary);text-decoration:underline dotted" onclick="showSOItemsDetail('${so.id}')" title="Click for full details">${itemSummary}</span>
+          </td>
           <td>RM ${Number(so.total_amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
           <td>${fmtPaymentTerm(so.payment_term)}</td>
           <td>${so.delivery_date ? fmtDate(so.delivery_date) : '—'}</td>
@@ -126,9 +133,56 @@ function renderSalesOrders(list) {
           <td>
             <button class="btn btn-outline btn-sm" onclick="openSODetails('${so.id}')">Manage</button>
           </td>
-        </tr>`).join('')}
+        </tr>`;
+      }).join('')}
       </tbody>
     </table>`;
+}
+
+function showSOItemsDetail(soId) {
+  const so = allSOs.find(x => x.id === soId);
+  if (!so) return;
+  const items = so.items || [];
+  const rows = items.length ? items.map((it, i) => {
+    const name = it.product || it.description || it.name || `Item ${i+1}`;
+    const qty = it.qty || it.quantity || 1;
+    const unit = Number(it.unit_price || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 });
+    const sub = Number(it.subtotal || (it.unit_price * qty) || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 });
+    return `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${name}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:center">${qty}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right">RM ${unit}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:600">RM ${sub}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="4" style="padding:12px;text-align:center;color:var(--text-muted)">No items</td></tr>`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = 'display:flex;align-items:flex-start;padding:40px 16px';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:560px;align-self:flex-start;margin:auto">
+      <div class="modal-header">
+        <h3>${so.so_no} — Items</h3>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="background:var(--table-header-bg)">
+            <th style="padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--text-muted)">Product / Description</th>
+            <th style="padding:8px 10px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--text-muted)">Qty</th>
+            <th style="padding:8px 10px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--text-muted)">Unit Price</th>
+            <th style="padding:8px 10px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--text-muted)">Subtotal</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr style="background:var(--table-header-bg)">
+            <td colspan="3" style="padding:10px;text-align:right;font-weight:700">Total</td>
+            <td style="padding:10px;text-align:right;font-weight:700">RM ${Number(so.total_amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 document.querySelectorAll('.so-filter-btn').forEach(btn => {
