@@ -102,41 +102,39 @@ async function loadSalesOrders() {
   renderSalesOrders(allSOs);
 }
 
+function soItemSummaryHtml(so) {
+  var items = so.items || [];
+  if (!items.length) return '<span style="color:var(--text-muted)">—</span>';
+  var first = items[0].product || items[0].description || items[0].name || 'Item';
+  var extra = items.length > 1 ? ' <span style="color:var(--text-muted);font-size:11px">(+' + (items.length - 1) + ' more)</span>' : '';
+  return '<span style="cursor:pointer;color:var(--primary);text-decoration:underline dotted" onclick="showSOItemsDetail(\'' + so.id + '\')" title="Click for full details">' + first + extra + '</span>';
+}
+
 function renderSalesOrders(list) {
   if (!list.length) {
     document.getElementById('so-table-wrap').innerHTML = '<div class="empty-state">No sales orders found</div>';
     return;
   }
-  document.getElementById('so-table-wrap').innerHTML = `
-    <table class="data-table">
-      <thead><tr>
-        <th>SO No</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Status</th><th>Next Action</th><th>Actions</th>
-      </tr></thead>
-      <tbody>${list.map(so => {
-        const items = so.items || [];
-        const first = items[0]?.product || items[0]?.description || items[0]?.name || '—';
-        const itemSummary = items.length > 1 ? `${first} <span style="color:var(--text-muted);font-size:11px">(+${items.length - 1} more)</span>` : first;
-        return `
-        <tr>
-          <td><strong>${so.so_no}</strong></td>
-          <td>${so.customers?.company_name || '—'}</td>
-          <td style="max-width:180px">
-            <span style="cursor:pointer;color:var(--primary);text-decoration:underline dotted" onclick="showSOItemsDetail('${so.id}')" title="Click for full details">${itemSummary}</span>
-          </td>
-          <td>RM ${Number(so.total_amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-          <td>${fmtPaymentTerm(so.payment_term)}</td>
-          <td>${so.delivery_date ? fmtDate(so.delivery_date) : '—'}</td>
-          <td><span class="status-pill pill-${soStatusColor[so.status] || 'gray'}">${soLabel(so.status)}</span></td>
-          <td style="font-size:12px;color:${so.next_action_due && so.next_action_due <= new Date().toISOString().split('T')[0] ? 'var(--red)' : 'var(--gray-600)'}">
-            ${so.next_action || '—'}${so.next_action_due ? ` (${fmtDate(so.next_action_due)})` : ''}
-          </td>
-          <td>
-            <button class="btn btn-outline btn-sm" onclick="openSODetails('${so.id}')">Manage</button>
-          </td>
-        </tr>`;
-      }).join('')}
-      </tbody>
-    </table>`;
+  var today = new Date().toISOString().split('T')[0];
+  var rows = list.map(function(so) {
+    var naColor = (so.next_action_due && so.next_action_due <= today) ? 'var(--red)' : 'var(--gray-600)';
+    var naText = (so.next_action || '—') + (so.next_action_due ? ' (' + fmtDate(so.next_action_due) + ')' : '');
+    return '<tr>' +
+      '<td><strong>' + so.so_no + '</strong></td>' +
+      '<td>' + (so.customers && so.customers.company_name ? so.customers.company_name : '—') + '</td>' +
+      '<td style="max-width:180px">' + soItemSummaryHtml(so) + '</td>' +
+      '<td>RM ' + Number(so.total_amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 }) + '</td>' +
+      '<td>' + fmtPaymentTerm(so.payment_term) + '</td>' +
+      '<td>' + (so.delivery_date ? fmtDate(so.delivery_date) : '—') + '</td>' +
+      '<td><span class="status-pill pill-' + (soStatusColor[so.status] || 'gray') + '">' + soLabel(so.status) + '</span></td>' +
+      '<td style="font-size:12px;color:' + naColor + '">' + naText + '</td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="openSODetails(\'' + so.id + '\')">Manage</button></td>' +
+      '</tr>';
+  }).join('');
+  document.getElementById('so-table-wrap').innerHTML =
+    '<table class="data-table"><thead><tr>' +
+    '<th>SO No</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Status</th><th>Next Action</th><th>Actions</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
 function showSOItemsDetail(soId) {
