@@ -10,12 +10,72 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   localStorage.clear(); window.location.href = '/login';
 });
 
+// Set sidebar role
+const _sidebarRole = document.getElementById('sidebar-role');
+if (_sidebarRole) _sidebarRole.textContent = localStorage.getItem('ao_role') || 'Admin';
+
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 }
 
+// ── Tab titles ──
+const tabTitles = {
+  dashboard: 'Dashboard',
+  orders:    'Job Orders',
+  oee:       'OEE',
+  report:    'AI Report',
+  users:     'Users'
+};
+
+// ── activateTab: switches visible tab + updates header + syncs sidebar nav ──
+function activateTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(t => {
+    t.classList.add('hidden');
+    t.classList.remove('active');
+  });
+  document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
+
+  const tabEl = document.getElementById('tab-' + tabName);
+  if (tabEl) { tabEl.classList.remove('hidden'); tabEl.classList.add('active'); }
+
+  const navItem = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+  if (navItem) navItem.classList.add('active');
+
+  const title = tabTitles[tabName] || tabName;
+  const titleEl = document.getElementById('page-title');
+  const breadEl = document.getElementById('page-breadcrumb');
+  if (titleEl) titleEl.textContent = title;
+  if (breadEl) breadEl.textContent = title;
+
+  // Side-effects per tab
+  if (tabName === 'orders') { loadOrders(); if (userRole === 'super_admin') loadDeleteRequests(); }
+  if (tabName === 'users')  { loadUsers(); loadCustomerAccounts(); }
+  if (tabName === 'report') loadReportHistory();
+}
+
 // ── Tab navigation ──
 let allOrders = [], allUsers = [], currentStatusFilter = 'all', trendChart = null;
+let orderCustomers = []; // CRM customers for order form dropdown
+
+async function loadOrderCustomers() {
+  try {
+    const res = await fetch('/api/customers', { headers: authHeaders() });
+    if (res.ok) { const d = await res.json(); if (Array.isArray(d)) orderCustomers = d; }
+  } catch(e) { /* non-fatal */ }
+}
+
+function populateCustomerSelect(selectedValue) {
+  const sel = document.getElementById('f-customer');
+  if (!sel) return;
+  const opts = orderCustomers.map(c =>
+    `<option value="${c.company_name}"${c.company_name === selectedValue ? ' selected' : ''}>${c.company_name}</option>`
+  ).join('');
+  // If editing and value not in list, add it so it doesn't go blank
+  const found = orderCustomers.find(c => c.company_name === selectedValue);
+  const extra = (selectedValue && !found)
+    ? `<option value="${selectedValue}" selected>${selectedValue}</option>` : '';
+  sel.innerHTML = `<option value="">— Select customer —</option>${opts}${extra}`;
+}
 let editingUserId = null, currentDays = 7;
 const userRole = localStorage.getItem('ao_role') || 'worker';
 
@@ -31,15 +91,19 @@ document.querySelectorAll('.period-btn').forEach(btn => {
   });
 });
 
+// Wire sidebar nav items
+document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    activateTab(btn.dataset.tab);
+    closeSidebar(); // close mobile backdrop after switching tab
+  });
+});
+
+// Legacy tab-nav-btn support (keep working if present)
 document.querySelectorAll('.tab-nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
-    if (btn.dataset.tab === 'orders') { loadOrders(); if (userRole === 'super_admin') loadDeleteRequests(); }
-    if (btn.dataset.tab === 'users') loadUsers();
-    if (btn.dataset.tab === 'report') loadReportHistory();
+    activateTab(btn.dataset.tab);
   });
 });
 
@@ -47,7 +111,7 @@ document.querySelectorAll('.tab-nav-btn').forEach(btn => {
 async function loadDashboard() {
   try {
     const res = await fetch(`/api/dashboard?days=${currentDays}`, { headers: authHeaders() });
-    if (res.status === 401) { window.location.href = '/login'; return; }
+    if (res.status === 401) { localStorage.clear(); window.location.href = '/login'; return; }
     const d = await res.json();
 
     document.getElementById('kpi-capacity').textContent = d.capacity_rate !== null ? d.capacity_rate + '%' : 'N/A';
@@ -74,7 +138,7 @@ function renderTrend(trend) {
       labels: trend.map(t => t.date.slice(5)),
       datasets: [{ label: 'Units Completed', data: trend.map(t => t.qty), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.08)', borderWidth: 2, pointBackgroundColor: '#2563eb', tension: 0.3, fill: true }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } } }
+    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 400 }, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } } }
   });
 }
 
@@ -174,14 +238,15 @@ function renderOrders() {
     }).join('');
 
     const items = o.items || [];
+    const itemsJson = encodeURIComponent(JSON.stringify(items));
     const productCell = items.length > 1
-      ? `<span title="${items.map(i => `${i.product} ×${i.quantity}`).join('\n')}">${items[0].product} <span class="item-count">+${items.length - 1}</span></span>`
+      ? `<span>${items[0].product} <span class="item-count" style="cursor:pointer" onclick="showOrderItems('${itemsJson}')" title="Click to view all items">+${items.length - 1} more</span></span>`
       : o.product || '—';
 
     const attachments = o.attachments || [];
     const attachJson = encodeURIComponent(JSON.stringify(attachments));
     const badge = attachments.length
-      ? `<span class="attach-badge" onclick="showAttachments('${attachJson}')" style="cursor:pointer" title="Click to view files">📎 ${attachments.length}</span>`
+      ? `<span class="attach-badge" onclick="showAttachments('${attachJson}','${o.id}')" style="cursor:pointer" title="Click to view files">📎 ${attachments.length}</span>`
       : '';
     const filesCell = `${badge}<button class="btn btn-sm btn-outline upload-btn" title="Upload files" onclick="uploadFilesToOrder('${o.id}')">+</button>`;
 
@@ -190,8 +255,10 @@ function renderOrders() {
 
     // Action buttons
     let actions = '';
+    // Edit button — always visible for admin, only on non-done orders for regular admin
+    actions += `<button class="btn btn-sm btn-outline" onclick="openEditOrder('${o.id}')" title="Edit order">✏️</button>`;
     if (!isDone && nextStatus[o.status]) {
-      actions += `<button class="btn btn-sm btn-primary" onclick="advanceStatus('${o.id}','${nextStatus[o.status]}')">${nextLabel[o.status]}</button>`;
+      actions += ` <button class="btn btn-sm btn-primary" onclick="advanceStatus('${o.id}','${nextStatus[o.status]}')">${nextLabel[o.status]}</button>`;
     }
     if (!isDone) {
       actions += ` <button class="btn btn-sm ${o.urgent ? 'btn-warning' : 'btn-outline'}" onclick="toggleUrgent('${o.id}')" title="Toggle urgent">${o.urgent ? '🔴' : '⚑'}</button>`;
@@ -229,15 +296,76 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
   });
 });
 
-function showAttachments(attachJson) {
-  const attachments = JSON.parse(decodeURIComponent(attachJson));
-  const list = attachments.map(a =>
-    a.url
-      ? `<li><a href="${a.url}" target="_blank" rel="noopener">${a.name}</a> <span style="color:var(--gray-400);font-size:11px">(${(a.size/1024).toFixed(1)} KB)</span></li>`
-      : `<li>${a.name} <span style="color:var(--gray-400);font-size:11px">(no preview)</span></li>`
-  ).join('');
-  document.getElementById('attach-modal-list').innerHTML = `<ul style="padding-left:18px;line-height:2">${list}</ul>`;
+function showOrderItems(itemsJson) {
+  const items = JSON.parse(decodeURIComponent(itemsJson));
+  const modal = document.getElementById('attach-modal');
+  modal.querySelector('h3').textContent = 'All Products';
+  document.getElementById('attach-modal-list').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:6px 8px;color:var(--text-muted);font-weight:600">Product</th>
+        <th style="text-align:right;padding:6px 8px;color:var(--text-muted);font-weight:600">Qty</th>
+      </tr></thead>
+      <tbody>${items.map((it, i) => `
+        <tr style="border-bottom:1px solid var(--border);${i % 2 === 0 ? '' : 'background:var(--gray-50)'}">
+          <td style="padding:7px 8px">${it.product || '—'}</td>
+          <td style="padding:7px 8px;text-align:right;font-weight:600">${it.quantity || 0}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  modal.classList.remove('hidden');
+}
+
+let _attachModalOrderId = null;
+
+function showAttachments(attachJson, orderId) {
+  _attachModalOrderId = orderId || null;
+  renderAttachModal(JSON.parse(decodeURIComponent(attachJson)));
   document.getElementById('attach-modal').classList.remove('hidden');
+}
+
+function renderAttachModal(attachments) {
+  const canDelete = ['admin', 'super_admin'].includes(userRole);
+  if (!attachments.length) {
+    document.getElementById('attach-modal-list').innerHTML = '<p style="color:var(--text-muted)">No attachments.</p>';
+    return;
+  }
+  const items = attachments.map((a, idx) => {
+    const deleteBtn = canDelete && _attachModalOrderId
+      ? `<button onclick="deleteAttachment('${encodeURIComponent(a.url || '')}','${encodeURIComponent(a.name)}')" title="Delete file" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:15px;padding:0 0 0 6px;line-height:1" aria-label="Delete">✕</button>`
+      : '';
+    return a.url
+      ? `<li style="display:flex;align-items:center;gap:4px;margin-bottom:6px">
+           <a href="${a.url}" target="_blank" rel="noopener" style="flex:1">${a.name}</a>
+           <span style="color:var(--text-muted);font-size:11px">(${(a.size / 1024).toFixed(1)} KB)</span>
+           ${deleteBtn}
+         </li>`
+      : `<li style="display:flex;align-items:center;gap:4px;margin-bottom:6px">
+           <span style="flex:1">${a.name}</span>
+           <span style="color:var(--text-muted);font-size:11px">(no preview)</span>
+           ${deleteBtn}
+         </li>`;
+  }).join('');
+  document.getElementById('attach-modal-list').innerHTML = `<ul style="padding:0;list-style:none">${items}</ul>`;
+}
+
+async function deleteAttachment(encodedUrl, encodedName) {
+  const url = decodeURIComponent(encodedUrl);
+  const name = decodeURIComponent(encodedName);
+  if (!_attachModalOrderId) return;
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+
+  const res = await fetch(`/api/orders/${_attachModalOrderId}/attachments`, {
+    method: 'DELETE', headers: authHeaders(),
+    body: JSON.stringify({ url })
+  });
+  if (!res.ok) { const err = await res.json().catch(() => ({})); alert('Delete failed: ' + (err.error || res.status)); return; }
+
+  const { attachments } = await res.json();
+  // Update the modal in-place
+  renderAttachModal(attachments);
+  // Refresh orders table so badge count updates
+  loadOrders();
 }
 
 function uploadFilesToOrder(orderId) {
@@ -314,17 +442,48 @@ function addItemRow(product = '', quantity = '') {
 }
 
 function resetOrderModal() {
+  document.getElementById('f-edit-id').value = '';
   document.getElementById('f-order-no').value = '';
-  document.getElementById('f-customer').value = '';
   document.getElementById('f-due').value = '';
+  populateCustomerSelect('');
   document.getElementById('items-list').innerHTML = '';
   document.getElementById('file-preview').innerHTML = '';
   document.getElementById('f-files').value = '';
   document.querySelectorAll('#ws-checkboxes input[type=checkbox]').forEach(cb => cb.checked = true);
+  document.getElementById('order-modal-title').textContent = 'New Order';
+  document.getElementById('save-order-btn').textContent = 'Create Order';
   addItemRow();
 }
 
-document.getElementById('add-order-btn').addEventListener('click', () => {
+function openEditOrder(id) {
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+
+  document.getElementById('f-edit-id').value = o.id;
+  document.getElementById('f-order-no').value = o.order_no;
+  document.getElementById('f-due').value = o.due_date || '';
+  populateCustomerSelect(o.customer);
+  document.getElementById('order-modal-title').textContent = 'Edit Order';
+  document.getElementById('save-order-btn').textContent = 'Save Changes';
+  document.getElementById('file-preview').innerHTML = '';
+  document.getElementById('f-files').value = '';
+
+  // Populate items
+  document.getElementById('items-list').innerHTML = '';
+  const items = o.items && o.items.length ? o.items : [{ product: o.product || '', quantity: o.quantity || 1 }];
+  items.forEach(i => addItemRow(i.product, i.quantity));
+
+  // Tick correct workstations
+  const activeWs = o.workstations || [];
+  document.querySelectorAll('#ws-checkboxes input[type=checkbox]').forEach(cb => {
+    cb.checked = activeWs.includes(cb.value);
+  });
+
+  document.getElementById('order-modal').classList.remove('hidden');
+}
+
+document.getElementById('add-order-btn').addEventListener('click', async () => {
+  await loadOrderCustomers(); // refresh customer list
   resetOrderModal();
   document.getElementById('order-modal').classList.remove('hidden');
 });
@@ -341,8 +500,9 @@ document.getElementById('f-files').addEventListener('change', () => {
 });
 
 document.getElementById('save-order-btn').addEventListener('click', async () => {
+  const editId = document.getElementById('f-edit-id').value;
   const order_no = document.getElementById('f-order-no').value.trim();
-  const customer = document.getElementById('f-customer').value.trim();
+  const customer = document.getElementById('f-customer').value;
   const due_date = document.getElementById('f-due').value;
 
   const items = Array.from(document.querySelectorAll('.item-row')).map(row => ({
@@ -356,22 +516,38 @@ document.getElementById('save-order-btn').addEventListener('click', async () => 
   if (!items.length) { alert('Please add at least one product with quantity'); return; }
   if (!workstations.length) { alert('Please select at least one workstation'); return; }
 
+  const isEdit = !!editId;
   const btn = document.getElementById('save-order-btn');
-  btn.disabled = true; btn.textContent = 'Creating...';
-  try {
-    const res = await fetch('/api/orders', {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ order_no, customer, due_date, items, workstations })
-    });
-    if (!res.ok) { const err = await res.json(); alert('Error: ' + err.error); return; }
-    const order = await res.json();
+  btn.disabled = true; btn.textContent = isEdit ? 'Saving...' : 'Creating...';
 
-    // Upload attachments if any
+  try {
+    let orderId;
+
+    if (isEdit) {
+      // ── EDIT existing order ──
+      const res = await fetch(`/api/orders/${editId}`, {
+        method: 'PATCH', headers: authHeaders(),
+        body: JSON.stringify({ order_no, customer, due_date, items, workstations })
+      });
+      if (!res.ok) { const err = await res.json(); alert('Error: ' + err.error); return; }
+      orderId = editId;
+    } else {
+      // ── CREATE new order ──
+      const res = await fetch('/api/orders', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ order_no, customer, due_date, items, workstations })
+      });
+      if (!res.ok) { const err = await res.json(); alert('Error: ' + err.error); return; }
+      const order = await res.json();
+      orderId = order.id;
+    }
+
+    // Upload new attachments if any
     const files = document.getElementById('f-files').files;
     if (files.length) {
       const fd = new FormData();
       Array.from(files).forEach(f => fd.append('files', f));
-      await fetch(`/api/orders/${order.id}/attachments`, {
+      await fetch(`/api/orders/${orderId}/attachments`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: fd
@@ -380,7 +556,10 @@ document.getElementById('save-order-btn').addEventListener('click', async () => 
 
     document.getElementById('order-modal').classList.add('hidden');
     loadOrders(); loadDashboard();
-  } finally { btn.disabled = false; btn.textContent = 'Create Order'; }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = isEdit ? 'Save Changes' : 'Create Order';
+  }
 });
 
 // ── AI Report ──
@@ -522,6 +701,97 @@ async function deleteUser(id, username) {
   loadUsers();
 }
 
+// ── Customer Accounts ──
+let allCustomers = [], editingCuId = null;
+
+async function loadCustomerAccounts() {
+  document.getElementById('cu-tbody').innerHTML = '<tr><td colspan="6" class="loading">Loading...</td></tr>';
+  const res = await fetch('/api/customer-auth/accounts', { headers: authHeaders() });
+  if (!res.ok) { document.getElementById('cu-tbody').innerHTML = '<tr><td colspan="6" class="error">Failed to load customer accounts</td></tr>'; return; }
+  allCustomers = await res.json();
+  if (!allCustomers.length) {
+    document.getElementById('cu-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">No customer accounts yet.</td></tr>';
+    return;
+  }
+  document.getElementById('cu-tbody').innerHTML = allCustomers.map(cu => `<tr>
+    <td><strong>${cu.username}</strong></td>
+    <td>${cu.display_name || '—'}</td>
+    <td><span style="font-family:monospace;font-size:13px">${cu.customer_name}</span></td>
+    <td><span class="status-badge ${cu.active ? 'status-in_progress' : 'status-pending'}">${cu.active ? 'Active' : 'Disabled'}</span></td>
+    <td>${new Date(cu.created_at).toLocaleDateString()}</td>
+    <td>
+      <button class="btn btn-sm btn-outline" onclick="openEditCu('${cu.id}')">Edit</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteCu('${cu.id}','${cu.username}')">Delete</button>
+    </td>
+  </tr>`).join('');
+}
+
+document.getElementById('add-cu-btn').addEventListener('click', () => {
+  editingCuId = null;
+  document.getElementById('cu-modal-title').textContent = 'Add Customer Account';
+  document.getElementById('cu-username').value = '';
+  document.getElementById('cu-username').disabled = false;
+  document.getElementById('cu-display').value = '';
+  document.getElementById('cu-customer-name').value = '';
+  document.getElementById('cu-password').value = '';
+  document.getElementById('cu-pwd-label').textContent = 'Password *';
+  document.getElementById('cu-active-row').style.display = 'none';
+  document.getElementById('cu-modal').classList.remove('hidden');
+});
+
+function openEditCu(id) {
+  const cu = allCustomers.find(x => x.id === id);
+  if (!cu) return;
+  editingCuId = id;
+  document.getElementById('cu-modal-title').textContent = 'Edit Customer Account';
+  document.getElementById('cu-username').value = cu.username;
+  document.getElementById('cu-username').disabled = true;
+  document.getElementById('cu-display').value = cu.display_name || '';
+  document.getElementById('cu-customer-name').value = cu.customer_name;
+  document.getElementById('cu-password').value = '';
+  document.getElementById('cu-pwd-label').textContent = 'New Password (leave blank to keep)';
+  document.getElementById('cu-active').checked = cu.active;
+  document.getElementById('cu-active-row').style.display = '';
+  document.getElementById('cu-modal').classList.remove('hidden');
+}
+
+document.getElementById('cancel-cu-btn').addEventListener('click', () => document.getElementById('cu-modal').classList.add('hidden'));
+
+document.getElementById('save-cu-btn').addEventListener('click', async () => {
+  const username      = document.getElementById('cu-username').value.trim();
+  const display_name  = document.getElementById('cu-display').value.trim();
+  const customer_name = document.getElementById('cu-customer-name').value.trim();
+  const password      = document.getElementById('cu-password').value;
+  const active        = document.getElementById('cu-active').checked;
+
+  if (!customer_name) { alert('Customer Name is required'); return; }
+
+  const btn = document.getElementById('save-cu-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    let res;
+    if (editingCuId) {
+      const body = { display_name, customer_name, active };
+      if (password) body.password = password;
+      res = await fetch(`/api/customer-auth/accounts/${editingCuId}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
+    } else {
+      if (!username || !password) { alert('Username and password are required'); return; }
+      res = await fetch('/api/customer-auth/accounts', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ username, password, customer_name, display_name: display_name || username }) });
+    }
+    if (!res.ok) { const err = await res.json(); alert('Error: ' + err.error); return; }
+    document.getElementById('cu-modal').classList.add('hidden');
+    loadCustomerAccounts();
+  } finally { btn.disabled = false; btn.textContent = 'Save'; }
+});
+
+async function deleteCu(id, username) {
+  if (!confirm(`Delete customer account "${username}"? They will no longer be able to log in.`)) return;
+  const res = await fetch(`/api/customer-auth/accounts/${id}`, { method: 'DELETE', headers: authHeaders() });
+  if (!res.ok) { const err = await res.json(); alert('Error: ' + err.error); return; }
+  loadCustomerAccounts();
+}
+
 // ── Init ──
 loadDashboard();
+loadOrderCustomers();
 setInterval(loadDashboard, 120000);

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Office — Settings</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <script src="entity.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">AO</div>
+      <div>
+        <div class="logo-name">Amber Office</div>
+        <div class="logo-role" id="sidebar-role">Admin</div>
+      </div>
+    </div>
+    <!-- Company Switcher (admin/super_admin only) -->
+    <div class="entity-switcher hidden" id="entity-switcher">
+      <button class="entity-btn" id="entity-btn-aosb" onclick="switchEntity('AOSB')">
+        <span class="entity-dot entity-dot-aosb"></span>
+        <span>AOSB</span>
+        <span class="entity-sub">Trading</span>
+      </button>
+      <button class="entity-btn" id="entity-btn-adsb" onclick="switchEntity('ADSB')">
+        <span class="entity-dot entity-dot-adsb"></span>
+        <span>ADSB</span>
+        <span class="entity-sub">Mfg</span>
+      </button>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section nav-section-production">
+        <div class="nav-label">Production</div>
+        <a class="nav-item" href="/"><span class="nav-icon">📊</span> Dashboard</a>
+        <a class="nav-item" href="/#orders"><span class="nav-icon">📋</span> Job Orders</a>
+        <a class="nav-item" href="/#oee"><span class="nav-icon">📈</span> OEE</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Sales &amp; CRM</div>
+        <a class="nav-item" href="/crm"><span class="nav-icon">👥</span> Leads</a>
+        <a class="nav-item" href="/crm"><span class="nav-icon">📝</span> Quotations</a>
+        <a class="nav-item" href="/sales"><span class="nav-icon">📦</span> Sales Orders</a>
+        <a class="nav-item" href="/sales"><span class="nav-icon">🧾</span> Invoices</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Warehouse</div>
+        <a class="nav-item" href="/inventory"><span class="nav-icon">🗄️</span> Inventory</a>
+        <a class="nav-item" href="/inventory#bom"><span class="nav-icon">🔩</span> BOM</a>
+        <a class="nav-item" id="nav-products" href="/settings#portal-products"><span class="nav-icon">🛋️</span> Products</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <a class="nav-item" href="/#users"><span class="nav-icon">👤</span> Users</a>
+        <a class="nav-item active" href="/settings"><span class="nav-icon">⚙️</span> Settings</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-footer-btn theme-toggle-btn" onclick="toggleTheme()"><span id="theme-icon">☾</span> Dark Mode</button>
+      <a href="/worker" target="_blank" class="sidebar-footer-btn"><span>🔧</span> Worker View</a>
+      <button class="sidebar-footer-btn" id="logout-btn"><span>⏻</span> Logout</button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <header class="page-header">
+      <div class="page-header-left">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="breadcrumb">Home • Company Settings</div>
+        </div>
+      </div>
+      <div class="page-header-right">
+        <span id="active-entity-badge" class="entity-header-badge"></span>
+        <span id="header-user" class="header-user-badge"></span>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Page tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm page-tab active" data-page="company">🏢 Company Settings</button>
+        <button class="btn btn-outline btn-sm page-tab" data-page="portal-products">🛋️ Products</button>
+      </div>
+
+      <!-- ── COMPANY SETTINGS PAGE ── -->
+      <div id="page-company" class="settings-page">
+
+      <!-- Entity tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <button class="btn btn-primary btn-sm entity-tab active" data-entity="AOSB">AOSB (Trading)</button>
+        <button class="btn btn-outline btn-sm entity-tab" data-entity="ADSB">ADSB (Manufacturing)</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2 id="settings-title">AOSB — Company Settings</h2>
+          <span style="font-size:12px;color:var(--text-muted)">Used on invoice PDF headers &amp; LHDN e-invoice</span>
+        </div>
+        <div style="padding:16px 0">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+            <div style="grid-column:span 2">
+              <h3 style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Company Identity</h3>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Company Name *</label>
+              <input type="text" id="s-company_name" class="form-input" placeholder="e.g. Amber Office Sdn Bhd">
+            </div>
+            <div class="form-group">
+              <label class="form-label">SSM Registration No</label>
+              <input type="text" id="s-registration_no" class="form-input" placeholder="e.g. 1234567-A">
+            </div>
+            <div class="form-group">
+              <label class="form-label">TIN (Tax Identification Number)</label>
+              <input type="text" id="s-tin" class="form-input" placeholder="e.g. C12345678900">
+            </div>
+            <div class="form-group">
+              <label class="form-label">SST Registration No</label>
+              <input type="text" id="s-sst_no" class="form-input" placeholder="e.g. W10-1234-12345678">
+            </div>
+
+            <div style="grid-column:span 2;margin-top:8px">
+              <h3 style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Contact &amp; Address</h3>
+            </div>
+
+            <div class="form-group" style="grid-column:span 2">
+              <label class="form-label">Address</label>
+              <input type="text" id="s-address" class="form-input" placeholder="Street address">
+            </div>
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <input type="text" id="s-city" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Postcode</label>
+              <input type="text" id="s-postcode" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">State</label>
+              <select id="s-state" class="form-input">
+                <option value="">— Select state —</option>
+                <option>Johor</option><option>Kedah</option><option>Kelantan</option>
+                <option>Melaka</option><option>Negeri Sembilan</option><option>Pahang</option>
+                <option>Perak</option><option>Perlis</option><option>Pulau Pinang</option>
+                <option>Sabah</option><option>Sarawak</option><option>Selangor</option>
+                <option>Terengganu</option><option>Kuala Lumpur</option><option>Labuan</option><option>Putrajaya</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="text" id="s-phone" class="form-input" placeholder="e.g. 0312345678">
+            </div>
+            <div class="form-group" style="grid-column:span 2">
+              <label class="form-label">Email</label>
+              <input type="email" id="s-email" class="form-input">
+            </div>
+
+            <div style="grid-column:span 2;margin-top:8px">
+              <h3 style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Bank Details (shown on invoice PDF)</h3>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Bank Name</label>
+              <input type="text" id="s-bank_name" class="form-input" placeholder="e.g. Maybank">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Account Number</label>
+              <input type="text" id="s-bank_account" class="form-input" placeholder="e.g. 5621234567">
+            </div>
+            <div class="form-group" style="grid-column:span 2">
+              <label class="form-label">Account Holder Name</label>
+              <input type="text" id="s-bank_holder" class="form-input" placeholder="e.g. Amber Office Sdn Bhd">
+            </div>
+          </div>
+
+          <div style="margin-top:20px;display:flex;gap:12px;align-items:center">
+            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+            <span id="save-msg" style="font-size:13px;color:var(--text-muted)"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LHDN Info panel -->
+      <div class="panel" style="margin-top:16px" id="lhdn-panel">
+        <div class="panel-header">
+          <h2>LHDN MyInvois — Compliance Guide</h2>
+        </div>
+        <div style="padding:12px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div style="padding:12px;background:var(--content-bg);border-radius:8px">
+            <div style="font-weight:600;margin-bottom:6px;font-size:13px">📅 Your Deadline</div>
+            <div style="color:var(--indigo);font-size:18px;font-weight:700">Jan 2026</div>
+            <div style="color:var(--text-muted);font-size:12px">Phase 4 (RM 1M–5M turnover)<br>Grace period: Jun 2026</div>
+          </div>
+          <div style="padding:12px;background:var(--content-bg);border-radius:8px">
+            <div style="font-weight:600;margin-bottom:6px;font-size:13px">🔄 Workflow</div>
+            <div style="color:var(--text-secondary);font-size:12px;line-height:1.8">
+              1. Create invoice in Amber Office<br>
+              2. Export CSV → import to SQL Account<br>
+              3. SQL Account submits to LHDN<br>
+              4. Paste UUID + QR back to Amber Office<br>
+              5. PDF shows QR code ✓
+            </div>
+          </div>
+          <div style="padding:12px;background:var(--content-bg);border-radius:8px">
+            <div style="font-weight:600;margin-bottom:6px;font-size:13px">📋 Checklist</div>
+            <div style="color:var(--text-secondary);font-size:12px;line-height:1.8" id="lhdn-checklist">
+              Loading…
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /page-company -->
+
+      <!-- ── PORTAL PRODUCTS PAGE ── -->
+      <div id="page-portal-products" class="settings-page" style="display:none">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Customer Portal — Product Catalogue</h2>
+            <button class="btn btn-primary btn-sm" onclick="openProductForm()">+ Add Product</button>
+          </div>
+          <p class="form-note" style="margin-bottom:16px">These products appear on the customer portal quote configurator. Define fields and a pricing formula per product.</p>
+          <div id="portal-products-list"><div style="padding:20px;color:var(--text-muted);text-align:center">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- ── PORTAL PAYMENTS PAGE (now inside portal-products page as section) ── -->
+      <div id="page-portal-payments" class="settings-page" style="display:none">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Portal Payment Submissions</h2>
+            <button class="btn btn-outline btn-sm" onclick="loadPortalPayments()">↻ Refresh</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <button class="btn btn-outline btn-sm pay-filter-btn active" data-st="">All</button>
+            <button class="btn btn-outline btn-sm pay-filter-btn" data-st="pending">Pending</button>
+            <button class="btn btn-outline btn-sm pay-filter-btn" data-st="verified">Verified</button>
+            <button class="btn btn-outline btn-sm pay-filter-btn" data-st="rejected">Rejected</button>
+          </div>
+          <div id="portal-payments-list"><div style="padding:20px;color:var(--text-muted);text-align:center">Loading…</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Product Modal -->
+<div id="product-modal" class="modal hidden">
+  <div class="modal-box" style="max-width:640px;align-self:flex-start;margin:auto">
+    <h3 id="product-modal-title">Add Product</h3>
+    <input type="hidden" id="pm-id">
+
+    <!-- Image upload -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:12px;border:1.5px dashed var(--border);border-radius:10px;background:var(--surface2)">
+      <div id="pm-img-preview" style="width:72px;height:72px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0">🖼️</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Product Image</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">JPG, PNG, WebP — max 2 MB. Shown on customer portal product cards.</div>
+        <div style="display:flex;gap:8px">
+          <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">
+            📂 Choose Image
+            <input type="file" id="pm-image-file" accept="image/*" style="display:none" onchange="onProductImageChange(this)">
+          </label>
+          <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="clearProductImage()">✕ Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group" style="grid-column:span 2">
+        <label class="form-label">Product Name *</label>
+        <input type="text" id="pm-name" class="form-input" placeholder="e.g. Kitchen Cabinet">
+      </div>
+      <div class="form-group" style="grid-column:span 2">
+        <label class="form-label">Description</label>
+        <textarea id="pm-desc" class="form-input" rows="2" placeholder="Short description shown to customers"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Base Price (RM)</label>
+        <input type="number" id="pm-base-price" class="form-input" value="0" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sort Order</label>
+        <input type="number" id="pm-sort" class="form-input" value="0" min="0">
+      </div>
+      <div class="form-group" style="grid-column:span 2">
+        <label class="form-label">Pricing Formula <span style="font-weight:400;font-size:11px">(JS expression — variables: field keys, base_price, color_mod, price_add)</span></label>
+        <textarea id="pm-formula" class="form-input" rows="5" placeholder="e.g. (width/1000)*(height/1000)*base_price + color_mod&#10;&#10;For complex pricing, use an IIFE that returns an object:&#10;(function(){ ... return { total, per_unit, quantity, breakdown:[{label,amount}] }; })()"></textarea>
+      </div>
+      <div class="form-group" style="grid-column:span 2">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="pm-active" checked> Active (visible to customers)</label>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="form-label" style="margin:0">Configurable Fields</div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="addProductField()">+ Add Field</button>
+      </div>
+      <div id="pm-fields-list"></div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:20px">
+      <button class="btn btn-primary btn-lg" onclick="saveProduct()">Save Product</button>
+      <button class="btn btn-outline" onclick="closeProductModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-backdrop').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+document.getElementById('header-user').textContent = localStorage.getItem('ao_display_name') || localStorage.getItem('ao_username') || '';
+document.getElementById('sidebar-role').textContent = localStorage.getItem('ao_role') || 'Admin';
+document.getElementById('logout-btn').addEventListener('click', () => { localStorage.clear(); window.location.href = '/login'; });
+initEntitySwitcher();
+
+const TOKEN = localStorage.getItem('ao_token');
+if (!TOKEN) window.location.href = '/login';
+
+const api = async (method, path, body) => {
+  const r = await fetch('/api' + path, {
+    method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Request failed');
+  return d;
+};
+
+let currentEntity = 'AOSB';
+let settingsData = {};
+
+const FIELDS = ['company_name','registration_no','tin','sst_no','address','city','postcode','state','phone','email','bank_name','bank_account','bank_holder'];
+
+document.querySelectorAll('.entity-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.entity-tab').forEach(b => { b.classList.remove('active'); b.classList.add('btn-outline'); b.classList.remove('btn-primary'); });
+    btn.classList.add('active', 'btn-primary'); btn.classList.remove('btn-outline');
+    currentEntity = btn.dataset.entity;
+    document.getElementById('settings-title').textContent = `${currentEntity} — Company Settings`;
+    loadEntity(currentEntity);
+  });
+});
+
+async function loadEntity(entity) {
+  try {
+    const data = await api('GET', '/company-settings/' + entity);
+    settingsData[entity] = data;
+    FIELDS.forEach(f => {
+      const el = document.getElementById('s-' + f);
+      if (el) el.value = data[f] || '';
+    });
+    updateChecklist(data);
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function updateChecklist(data) {
+  const checks = [
+    [!!data.company_name, 'Company name'],
+    [!!data.tin, 'TIN number'],
+    [!!data.registration_no, 'SSM registration'],
+    [!!data.sst_no, 'SST number'],
+    [!!data.address, 'Address'],
+    [!!data.bank_account, 'Bank details'],
+  ];
+  document.getElementById('lhdn-checklist').innerHTML = checks.map(([ok, label]) =>
+    `<span style="color:${ok?'#10b981':'#ef4444'}">${ok?'✓':'✗'} ${label}</span><br>`
+  ).join('');
+}
+
+async function saveSettings() {
+  const body = {};
+  FIELDS.forEach(f => { body[f] = document.getElementById('s-' + f)?.value || ''; });
+  try {
+    const data = await api('PUT', '/company-settings/' + currentEntity, body);
+    settingsData[currentEntity] = data;
+    updateChecklist(data);
+    const msg = document.getElementById('save-msg');
+    msg.textContent = '✓ Saved';
+    msg.style.color = '#10b981';
+    setTimeout(() => msg.textContent = '', 3000);
+  } catch(e) {
+    alert(e.message);
+  }
+}
+
+loadEntity('AOSB');
+
+// Auto-open tab based on URL hash
+if (window.location.hash === '#portal-products') {
+  document.querySelectorAll('.settings-page').forEach(p => p.style.display = 'none');
+  document.getElementById('page-portal-products').style.display = 'block';
+  document.querySelectorAll('.page-tab').forEach(b => { b.className = 'btn btn-outline btn-sm page-tab'; });
+  const pt = document.querySelector('.page-tab[data-page="portal-products"]');
+  if (pt) pt.className = 'btn btn-primary btn-sm page-tab active';
+  loadPortalProducts();
+  document.getElementById('nav-products')?.classList.add('active');
+}
+
+// ── Page tab switching ──────────────────────────────────────────────────────
+document.querySelectorAll('.page-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.page-tab').forEach(b => { b.className = 'btn btn-outline btn-sm page-tab'; });
+    btn.className = 'btn btn-primary btn-sm page-tab active';
+    const page = btn.dataset.page;
+    document.querySelectorAll('.settings-page').forEach(p => p.style.display = 'none');
+    document.getElementById('page-' + page).style.display = 'block';
+    if (page === 'portal-products') { loadPortalProducts(); history.replaceState(null,'','#portal-products'); }
+    if (page === 'company') history.replaceState(null,'','#');
+  });
+});
+
+// ── Portal Products ────────────────────────────────────────────────────────
+let _pmFields = [];
+let _editProductId = null;
+let _pmImageBase64 = null;   // null = no change; string = new image; '' = clear image
+
+function onProductImageChange(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2 MB.'); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _pmImageBase64 = e.target.result;
+    const preview = document.getElementById('pm-img-preview');
+    preview.innerHTML = `<img src="${_pmImageBase64}" style="width:100%;height:100%;object-fit:cover">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearProductImage() {
+  _pmImageBase64 = '';   // empty string signals "delete image"
+  document.getElementById('pm-img-preview').innerHTML = '🖼️';
+  document.getElementById('pm-image-file').value = '';
+}
+
+async function loadPortalProducts() {
+  const el = document.getElementById('portal-products-list');
+  el.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center">Loading…</div>';
+  try {
+    const data = await api('GET', '/customer-portal/admin/products');
+    if (!data.length) { el.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center">No products yet. Click "+ Add Product" to create one.</div>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Name</th><th>Base Price</th><th>Fields</th><th>Active</th><th>Sort</th><th>Actions</th></tr></thead>
+      <tbody>${data.map(p => `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            ${p.image_url
+              ? `<img src="${p.image_url}" onclick="zoomImage('${p.image_url.replace(/'/g,"\\'")}','${esc(p.name)}')"
+                  style="width:48px;height:48px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid var(--border);flex-shrink:0"
+                  title="Click to enlarge">`
+              : `<div style="width:48px;height:48px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🖼️</div>`}
+            <div>
+              <strong>${esc(p.name)}</strong>
+              <div style="font-size:11px;color:var(--text-muted)">${esc(p.description||'')}</div>
+            </div>
+          </div>
+        </td>
+        <td>RM ${parseFloat(p.base_price||0).toFixed(2)}</td>
+        <td>${(p.fields||[]).length} field(s)</td>
+        <td><span style="color:${p.active?'#10b981':'#ef4444'}">${p.active?'✓ Yes':'✗ No'}</span></td>
+        <td>${p.sort_order||0}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="openProductForm('${p.id}')">Edit</button>
+          <button class="btn btn-outline btn-sm" style="margin-left:4px;color:var(--red)" onclick="deleteProduct('${p.id}')">Delete</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  } catch(e) { el.innerHTML = `<div style="padding:20px;color:var(--red)">${e.message}</div>`; }
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function zoomImage(src, title) {
+  let lb = document.getElementById('img-lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'img-lightbox';
+    lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:zoom-out;padding:24px';
+    lb.onclick = () => lb.remove();
+    document.body.appendChild(lb);
+  }
+  lb.innerHTML = `
+    <div style="color:#fff;font-size:15px;font-weight:600;opacity:.85">${esc(title)}</div>
+    <img src="${src}" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.6)">
+    <div style="color:#fff;font-size:12px;opacity:.5">Click anywhere to close</div>`;
+  lb.style.display = 'flex';
+}
+
+async function openProductForm(id) {
+  _pmFields = [];
+  _editProductId = id || null;
+  _pmImageBase64 = null;
+  document.getElementById('product-modal-title').textContent = id ? 'Edit Product' : 'Add Product';
+  document.getElementById('pm-id').value = id || '';
+  document.getElementById('pm-name').value = '';
+  document.getElementById('pm-desc').value = '';
+  document.getElementById('pm-base-price').value = '0';
+  document.getElementById('pm-formula').value = '';
+  document.getElementById('pm-sort').value = '0';
+  document.getElementById('pm-active').checked = true;
+  document.getElementById('pm-fields-list').innerHTML = '';
+  document.getElementById('pm-image-file').value = '';
+  document.getElementById('pm-img-preview').innerHTML = '🖼️';
+
+  if (id) {
+    try {
+      const data = await api('GET', '/customer-portal/admin/products');
+      const p = data.find(x => x.id === id);
+      if (p) {
+        document.getElementById('pm-name').value = p.name || '';
+        document.getElementById('pm-desc').value = p.description || '';
+        document.getElementById('pm-base-price').value = p.base_price || 0;
+        document.getElementById('pm-formula').value = p.formula || '';
+        document.getElementById('pm-sort').value = p.sort_order || 0;
+        document.getElementById('pm-active').checked = p.active !== false;
+        _pmFields = (p.fields || []).map(f => ({ ...f }));
+        renderPmFields();
+        // Show existing image
+        if (p.image_url) {
+          document.getElementById('pm-img-preview').innerHTML =
+            `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover">`;
+        }
+      }
+    } catch {}
+  }
+
+  document.getElementById('product-modal').classList.remove('hidden');
+}
+
+function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+function addProductField() {
+  _pmFields.push({ key: 'field_' + Date.now(), label: '', type: 'number', min: 0, max: 9999, default: 0 });
+  renderPmFields();
+}
+
+function removeProductField(idx) {
+  _pmFields.splice(idx, 1);
+  renderPmFields();
+}
+
+function renderPmFields() {
+  const el = document.getElementById('pm-fields-list');
+  if (!_pmFields.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">No fields yet. Click "+ Add Field".</div>'; return; }
+  el.innerHTML = _pmFields.map((f, i) => `
+    <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:start">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Key</label>
+        <input type="text" class="form-input" value="${esc(f.key)}" oninput="_pmFields[${i}].key=this.value" placeholder="e.g. width">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Label</label>
+        <input type="text" class="form-input" value="${esc(f.label)}" oninput="_pmFields[${i}].label=this.value" placeholder="e.g. Width (mm)">
+      </div>
+      <button class="btn btn-outline btn-sm" style="color:var(--red);margin-top:18px" onclick="removeProductField(${i})">✕</button>
+      <div class="form-group" style="margin:0;grid-column:span 3">
+        <label class="form-label">Type</label>
+        <select class="form-input" onchange="_pmFields[${i}].type=this.value;renderPmFields()">
+          <option value="number" ${f.type==='number'?'selected':''}>Number (e.g. dimension)</option>
+          <option value="select" ${f.type==='select'?'selected':''}>Select (dropdown options)</option>
+          <option value="checkbox" ${f.type==='checkbox'?'selected':''}>Checkbox (add-on)</option>
+        </select>
+      </div>
+      ${f.type === 'number' ? `
+        <div class="form-group" style="margin:0"><label class="form-label">Min</label><input type="number" class="form-input" value="${f.min||0}" oninput="_pmFields[${i}].min=+this.value"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Max</label><input type="number" class="form-input" value="${f.max||9999}" oninput="_pmFields[${i}].max=+this.value"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Default</label><input type="number" class="form-input" value="${f.default||0}" oninput="_pmFields[${i}].default=+this.value"></div>
+      ` : ''}
+      ${f.type === 'select' ? `
+        <div class="form-group" style="margin:0;grid-column:span 3">
+          <label class="form-label">Options (one per line) and optional price mod (+/- RM)</label>
+          <textarea class="form-input" rows="3" oninput="_pmFields[${i}]._optionsRaw=this.value" placeholder="White&#10;Walnut|180&#10;Oak|150">${esc((f.options||[]).map((o,oi) => { const mod = (f.price_mod||{})[o]; return mod !== undefined ? o+'|'+mod : o; }).join('\n'))}</textarea>
+          <div class="form-note">Format: OptionName or OptionName|priceMod e.g. Walnut|180</div>
+        </div>
+      ` : ''}
+      ${f.type === 'checkbox' ? `
+        <div class="form-group" style="margin:0"><label class="form-label">Price Add (RM)</label><input type="number" class="form-input" value="${f.price_add||0}" oninput="_pmFields[${i}].price_add=+this.value"></div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+async function saveProduct() {
+  const name = document.getElementById('pm-name').value.trim();
+  if (!name) { alert('Product name is required.'); return; }
+
+  // Process fields — parse select options
+  const fields = _pmFields.map(f => {
+    const out = { key: f.key, label: f.label, type: f.type };
+    if (f.type === 'number') { out.min = f.min||0; out.max = f.max||9999; out.default = f.default||0; }
+    if (f.type === 'checkbox') { out.price_add = f.price_add||0; }
+    if (f.type === 'select') {
+      const raw = f._optionsRaw || (f.options||[]).join('\n');
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      out.options = lines.map(l => l.split('|')[0].trim());
+      out.price_mod = {};
+      lines.forEach(l => {
+        const [opt, mod] = l.split('|');
+        if (mod !== undefined) out.price_mod[opt.trim()] = parseFloat(mod)||0;
+      });
+    }
+    return out;
+  });
+
+  const body = {
+    name,
+    description: document.getElementById('pm-desc').value.trim(),
+    base_price: parseFloat(document.getElementById('pm-base-price').value)||0,
+    formula: document.getElementById('pm-formula').value.trim(),
+    sort_order: parseInt(document.getElementById('pm-sort').value)||0,
+    active: document.getElementById('pm-active').checked,
+    fields
+  };
+  // Only include image_url if admin changed it (_pmImageBase64 !== null)
+  if (_pmImageBase64 !== null) body.image_url = _pmImageBase64 || null;
+
+  try {
+    const id = document.getElementById('pm-id').value;
+    if (id) await api('PATCH', '/customer-portal/admin/products/' + id, body);
+    else await api('POST', '/customer-portal/admin/products', body);
+    closeProductModal();
+    loadPortalProducts();
+  } catch(e) { alert(e.message); }
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Delete this product? Customers will no longer see it.')) return;
+  try { await api('DELETE', '/customer-portal/admin/products/' + id); loadPortalProducts(); }
+  catch(e) { alert(e.message); }
+}
+
+// ── Portal Payments ────────────────────────────────────────────────────────
+let _payFilter = '';
+document.querySelectorAll('.pay-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pay-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _payFilter = btn.dataset.st;
+    loadPortalPayments();
+  });
+});
+
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-MY', { day:'2-digit', month:'short', year:'numeric' }) : '—'; }
+function fmtMoney(n) { return 'RM ' + parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+
+async function loadPortalPayments() {
+  const el = document.getElementById('portal-payments-list');
+  el.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center">Loading…</div>';
+  try {
+    const url = '/customer-portal/admin/payments' + (_payFilter ? '?status=' + _payFilter : '');
+    const data = await api('GET', url);
+    if (!data.length) { el.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center">No payments found.</div>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Customer</th><th>SO</th><th>Method</th><th>Amount</th><th>Status</th><th>Slip</th><th>Actions</th></tr></thead>
+      <tbody>${data.map(p => `<tr>
+        <td>${fmtDate(p.created_at)}</td>
+        <td>${esc(p.customer_name)}</td>
+        <td>${esc(p.so_no||'—')}</td>
+        <td>${p.method==='bank_transfer'?'🏦 Bank':'💳 Credit'}</td>
+        <td>${fmtMoney(p.amount)}</td>
+        <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${p.status==='verified'?'#dcfce7':p.status==='rejected'?'#fee2e2':'#fef3c7'};color:${p.status==='verified'?'#14532d':p.status==='rejected'?'#7f1d1d':'#92400e'}">${esc(p.status)}</span></td>
+        <td>${p.slip_url?`<a href="${esc(p.slip_url)}" target="_blank" class="btn btn-outline btn-sm">View</a>`:'—'}</td>
+        <td>
+          ${p.status==='pending'?`
+            <button class="btn btn-outline btn-sm" style="color:var(--green)" onclick="reviewPayment('${p.id}','verified')">✓ Verify</button>
+            <button class="btn btn-outline btn-sm" style="color:var(--red);margin-left:4px" onclick="reviewPayment('${p.id}','rejected')">✕ Reject</button>
+          `:p.status==='verified'?'<span style="color:#10b981">✓ Verified</span>':'<span style="color:#ef4444">✗ Rejected</span>'}
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  } catch(e) { el.innerHTML = `<div style="padding:20px;color:var(--red)">${e.message}</div>`; }
+}
+
+async function reviewPayment(id, status) {
+  const label = status === 'verified' ? 'verify' : 'reject';
+  if (!confirm(`${label.charAt(0).toUpperCase() + label.slice(1)} this payment?`)) return;
+  try { await api('PATCH', '/customer-portal/admin/payments/' + id, { status }); loadPortalPayments(); }
+  catch(e) { alert(e.message); }
+}
+</script>
+</body>
+</html>

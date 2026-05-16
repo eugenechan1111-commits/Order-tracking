@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Tracking — Amber Office</title>
+  <script src="theme.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f4f6fb; --surface: #ffffff; --border: #e5e7eb;
+      --text: #111827; --text-muted: #6b7280;
+      --indigo: #4f46e5; --indigo-light: #eef2ff;
+      --green: #16a34a; --green-light: #dcfce7;
+      --orange: #ea580c; --orange-light: #fff7ed;
+      --yellow: #ca8a04; --yellow-light: #fefce8;
+      --gray: #9ca3af; --gray-light: #f3f4f6;
+      --red: #dc2626; --red-light: #fee2e2;
+      --radius: 14px; --shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    [data-theme="dark"] body, [data-theme="dark"] {
+      --bg: #0f1117; --surface: #1a1d2e; --border: #2d3148;
+      --text: #f1f5f9; --text-muted: #94a3b8;
+      --indigo-light: #1e1b4b; --green-light: #052e16;
+      --orange-light: #431407; --yellow-light: #1c1400;
+      --gray-light: #1f2937; --red-light: #2d0a0a;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Header */
+    .track-header {
+      background: var(--indigo); color: #fff;
+      padding: 0 20px; height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .brand { font-size: 17px; font-weight: 800; letter-spacing: -.4px; }
+    .welcome-badge {
+      background: rgba(255,255,255,.18); border-radius: 20px;
+      padding: 4px 12px; font-size: 13px; font-weight: 500;
+    }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .hdr-btn {
+      background: rgba(255,255,255,.15); border: none; color: #fff;
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 13px; font-weight: 500;
+    }
+    .hdr-btn:hover { background: rgba(255,255,255,.28); }
+
+    /* Search bar */
+    .search-bar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 14px 20px; display: flex; gap: 10px; align-items: center;
+    }
+    .search-input {
+      flex: 1; max-width: 340px;
+      padding: 9px 14px; border: 2px solid var(--border); border-radius: 8px;
+      font-size: 14px; background: var(--bg); color: var(--text);
+      outline: none; transition: border-color .15s;
+    }
+    .search-input:focus { border-color: var(--indigo); }
+    .search-btn {
+      padding: 9px 18px; background: var(--indigo); color: #fff;
+      border: none; border-radius: 8px; font-size: 14px;
+      font-weight: 600; cursor: pointer;
+    }
+    .search-btn:hover { opacity: .88; }
+    .clear-btn {
+      padding: 9px 14px; background: var(--gray-light); color: var(--text-muted);
+      border: none; border-radius: 8px; font-size: 14px; cursor: pointer;
+    }
+    .clear-btn:hover { opacity: .75; }
+
+    /* Content */
+    .content { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+
+    /* States */
+    .msg-box { text-align: center; padding: 48px 24px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); color: var(--text-muted); font-size: 15px; }
+    .msg-box .icon { font-size: 40px; margin-bottom: 12px; }
+    .msg-box.error { background: var(--red-light); color: var(--red); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-lg { display: inline-block; width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--indigo); border-radius: 50%; animation: spin .8s linear infinite; }
+    .loading-state { text-align: center; padding: 64px; }
+
+    /* Order card */
+    .order-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+    .order-card-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .order-no { font-size: 18px; font-weight: 800; }
+    .order-customer { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .order-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 4px 11px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+    .badge-pending      { background: var(--gray-light); color: var(--text-muted); }
+    .badge-inprod       { background: var(--orange-light); color: var(--orange); }
+    .badge-prodcomplete { background: var(--green-light); color: var(--green); }
+    .badge-onhold       { background: var(--yellow-light); color: var(--yellow); }
+    .badge-done         { background: var(--green-light); color: var(--green); }
+    .badge-ready        { background: var(--indigo-light); color: var(--indigo); }
+    .badge-urgent       { background: #fef2f2; color: var(--red); }
+
+    .order-meta { padding: 12px 20px; display: flex; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .order-meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-weight: 600; }
+    .meta-value { font-weight: 600; }
+    .overdue { color: var(--red); }
+
+    .order-products { padding: 12px 20px; border-bottom: 1px solid var(--border); }
+    .products-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+    .product-row { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
+    .product-qty { font-weight: 700; color: var(--indigo); }
+    .product-extra-wrap { margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px; }
+    .expand-btn { background: none; border: none; color: var(--indigo); font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 0 2px; display: block; }
+    .expand-btn:hover { opacity: .75; }
+
+    .overall-progress { padding: 14px 20px 10px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    .progress-track { height: 8px; background: var(--gray-light); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width .4s; }
+
+    /* Station timeline */
+    .timeline { padding: 4px 20px 20px; }
+    .timeline-title { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-weight: 600; margin-bottom: 14px; }
+    .station-row { display: flex; align-items: stretch; }
+    .station-line-col { display: flex; flex-direction: column; align-items: center; width: 30px; flex-shrink: 0; }
+    .station-line-top, .station-line-bot { width: 2px; flex: 1; min-height: 8px; background: var(--border); }
+    .station-row:first-child .station-line-top { background: transparent; }
+    .station-row:last-child  .station-line-bot { background: transparent; }
+    .station-dot { width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+    .station-dot.done   { background: var(--green);  border-color: var(--green);  color: #fff; }
+    .station-dot.active { background: var(--orange); border-color: var(--orange); color: #fff; }
+    .station-dot.paused { background: var(--yellow); border-color: var(--yellow); color: #fff; }
+    .station-content { flex: 1; padding: 6px 0 6px 14px; min-height: 44px; display: flex; align-items: center; justify-content: space-between; }
+    .station-name { font-size: 14px; font-weight: 600; }
+    .station-status-text { font-size: 12px; font-weight: 600; }
+    .station-status-text.done   { color: var(--green); }
+    .station-status-text.active { color: var(--orange); }
+    .station-status-text.paused { color: var(--yellow); }
+    .station-status-text.pending { color: var(--text-muted); }
+    .spinner-sm { display: inline-block; width: 10px; height: 10px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 4px; vertical-align: middle; }
+
+    @media (max-width: 480px) {
+      .search-bar { flex-wrap: wrap; }
+      .search-input { max-width: 100%; flex: unset; width: 100%; }
+      .order-card-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="track-header">
+    <div class="header-left">
+      <div class="brand">Amber Office</div>
+      <span id="welcome-badge" class="welcome-badge"></span>
+    </div>
+    <div class="header-right">
+      <button class="hdr-btn theme-toggle-btn" onclick="toggleTheme()">☾ Dark</button>
+      <button class="hdr-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="search-bar">
+    <input id="order-input" class="search-input" type="text" placeholder="Filter by order number…" autocomplete="off">
+    <button class="search-btn" onclick="doSearch()">Search</button>
+    <button class="clear-btn" onclick="clearSearch()">All Orders</button>
+  </div>
+
+  <div class="content" id="content">
+    <div class="loading-state"><div class="spinner-lg"></div></div>
+  </div>
+
+  <script src="track.js"></script>
+</body>
+</html>

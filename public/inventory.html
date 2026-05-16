@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Office — Inventory</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <script src="entity.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">AO</div>
+      <div>
+        <div class="logo-name">Amber Office</div>
+        <div class="logo-role" id="sidebar-role">Admin</div>
+      </div>
+    </div>
+
+    <!-- Company Switcher (admin/super_admin only) -->
+    <div class="entity-switcher hidden" id="entity-switcher">
+      <button class="entity-btn" id="entity-btn-aosb" onclick="switchEntity('AOSB')">
+        <span class="entity-dot entity-dot-aosb"></span>
+        <span>AOSB</span>
+        <span class="entity-sub">Trading</span>
+      </button>
+      <button class="entity-btn" id="entity-btn-adsb" onclick="switchEntity('ADSB')">
+        <span class="entity-dot entity-dot-adsb"></span>
+        <span>ADSB</span>
+        <span class="entity-sub">Mfg</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section nav-section-production">
+        <div class="nav-label">Production</div>
+        <a class="nav-item" href="/">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a class="nav-item" href="/#orders">
+          <span class="nav-icon">📋</span> Job Orders
+        </a>
+        <a class="nav-item" href="/#oee">
+          <span class="nav-icon">📈</span> OEE
+        </a>
+        <a class="nav-item" href="/#report">
+          <span class="nav-icon">🤖</span> AI Report
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Sales &amp; CRM</div>
+        <a class="nav-item" href="/crm">
+          <span class="nav-icon">👥</span> Leads
+        </a>
+        <a class="nav-item" href="/crm">
+          <span class="nav-icon">📝</span> Quotations
+        </a>
+        <a class="nav-item" href="/sales">
+          <span class="nav-icon">📦</span> Sales Orders
+        </a>
+        <a class="nav-item" href="/sales">
+          <span class="nav-icon">🧾</span> Invoices
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Warehouse</div>
+        <a class="nav-item active" data-tab="materials" href="#">
+          <span class="nav-icon">🗄️</span> Materials
+        </a>
+        <a class="nav-item" data-tab="bom" href="#">
+          <span class="nav-icon">🔩</span> BOM Editor
+        </a>
+        <a class="nav-item" data-tab="cutlist" href="#">
+          <span class="nav-icon">✂️</span> Cut List
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <a class="nav-item" href="/#users">
+          <span class="nav-icon">👤</span> Users
+        </a>
+        <a class="nav-item" href="/settings">
+          <span class="nav-icon">⚙️</span> Settings
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-footer-btn theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">☾</span> Dark Mode
+      </button>
+      <a href="/worker" target="_blank" class="sidebar-footer-btn">
+        <span>🔧</span> Worker View
+      </a>
+      <button class="sidebar-footer-btn" id="logout-btn">
+        <span>⏻</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <header class="page-header">
+      <div class="page-header-left">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        <div>
+          <div class="page-title" id="page-title">Inventory</div>
+          <div class="breadcrumb">Home • <span id="page-breadcrumb">Materials</span></div>
+        </div>
+      </div>
+      <div class="page-header-right">
+        <span id="active-entity-badge" class="entity-header-badge"></span>
+        <span id="low-stock-badge" class="badge badge-danger hidden"></span>
+        <span id="header-user" class="header-user-badge"></span>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- ── MATERIALS TAB ── -->
+      <div id="tab-materials" class="tab-content active">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm mat-filter-btn active" data-filter="">All</button>
+            <button class="btn btn-outline btn-sm mat-filter-btn" data-filter="low_stock">⚠ Low Stock</button>
+            <button class="btn btn-outline btn-sm mat-filter-btn" data-cat="panel">Panel</button>
+            <button class="btn btn-outline btn-sm mat-filter-btn" data-cat="hardware">Hardware</button>
+            <button class="btn btn-outline btn-sm mat-filter-btn" data-cat="fabric">Fabric</button>
+            <button class="btn btn-outline btn-sm mat-filter-btn" data-cat="metal">Metal</button>
+            <button class="btn btn-outline btn-sm mat-filter-btn" data-cat="other">Other</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openMaterialForm()">+ Add Material</button>
+        </div>
+        <div id="mat-table-wrap" class="table-wrap">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+
+      <!-- ── BOM EDITOR TAB ── -->
+      <div id="tab-bom" class="tab-content hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="bom-product-select" class="form-input" style="width:260px" onchange="loadBOM()">
+              <option value="">— Select product —</option>
+            </select>
+            <input type="text" id="bom-new-product" class="form-input" placeholder="Or type new product name…" style="width:220px">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="openMaterialCheck()">🔍 Stock Check</button>
+            <button class="btn btn-primary btn-sm" onclick="addBOMLine()">+ Add BOM Line</button>
+          </div>
+        </div>
+        <div id="bom-table-wrap" class="table-wrap">
+          <div style="color:var(--text-muted);text-align:center;padding:40px">Select a product to view its Bill of Materials.</div>
+        </div>
+      </div>
+
+      <!-- ── CUT LIST TAB ── -->
+      <div id="tab-cutlist" class="tab-content hidden">
+        <div class="panel" style="max-width:700px;margin:0 auto">
+          <div class="panel-header"><h2>Cut List Generator</h2></div>
+          <div style="padding:16px 0">
+            <p style="color:var(--text-secondary);margin-bottom:16px">Enter products and quantities to generate a panel cut list.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div class="form-group">
+                <label class="form-label">Sheet Length (mm)</label>
+                <input type="number" id="cl-sheet-length" class="form-input" value="2440">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sheet Width (mm)</label>
+                <input type="number" id="cl-sheet-width" class="form-input" value="1220">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:8px">
+              <label class="form-label">Items</label>
+              <div id="cl-items-list"></div>
+              <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="addCutListItem()">+ Add Product</button>
+            </div>
+            <div style="margin-top:16px">
+              <button class="btn btn-primary" onclick="generateCutList()">Generate Cut List</button>
+            </div>
+          </div>
+        </div>
+        <div id="cl-result" style="margin-top:24px"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── MATERIAL MODAL ── -->
+<div id="mat-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="mat-modal-title">Add Material</h3>
+      <button class="modal-close" onclick="closeModal('mat-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mat-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Code *</label>
+          <input type="text" id="mat-code" class="form-input" placeholder="e.g. MDF-18">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select id="mat-category" class="form-input">
+            <option value="panel">Panel</option>
+            <option value="hardware">Hardware</option>
+            <option value="fabric">Fabric</option>
+            <option value="metal">Metal</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Name *</label>
+          <input type="text" id="mat-name" class="form-input" placeholder="e.g. MDF 18mm Sheet">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit</label>
+          <select id="mat-unit" class="form-input">
+            <option value="pcs">pcs</option>
+            <option value="sheet">sheet</option>
+            <option value="m">m</option>
+            <option value="m2">m²</option>
+            <option value="kg">kg</option>
+            <option value="roll">roll</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit Cost (RM)</label>
+          <input type="number" id="mat-cost" class="form-input" step="0.01" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Stock</label>
+          <input type="number" id="mat-qty" class="form-input" step="0.01" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reorder Point</label>
+          <input type="number" id="mat-reorder" class="form-input" step="0.01" min="0" value="0">
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Notes</label>
+          <input type="text" id="mat-notes" class="form-input">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('mat-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMaterial()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── STOCK IN MODAL ── -->
+<div id="stock-in-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h3>Stock In</h3>
+      <button class="modal-close" onclick="closeModal('stock-in-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="si-mat-id">
+      <p id="si-mat-name" style="font-weight:600;margin-bottom:12px"></p>
+      <div class="form-group">
+        <label class="form-label">Quantity Received</label>
+        <input type="number" id="si-qty" class="form-input" step="0.01" min="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reference (PO / Delivery Note)</label>
+        <input type="text" id="si-reference" class="form-input" placeholder="e.g. PO-001">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input type="text" id="si-notes" class="form-input">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('stock-in-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmStockIn()">Record Stock In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── STOCK ADJUST MODAL ── -->
+<div id="adjust-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-header">
+      <h3>Stock Adjustment</h3>
+      <button class="modal-close" onclick="closeModal('adjust-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="adj-mat-id">
+      <p id="adj-mat-name" style="font-weight:600;margin-bottom:4px"></p>
+      <p id="adj-current" style="color:var(--text-muted);margin-bottom:12px;font-size:13px"></p>
+      <div class="form-group">
+        <label class="form-label">New Quantity (absolute)</label>
+        <input type="number" id="adj-qty" class="form-input" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <input type="text" id="adj-notes" class="form-input" placeholder="e.g. Stocktake correction">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('adjust-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAdjust()">Apply Adjustment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGS MODAL ── -->
+<div id="logs-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <h3 id="logs-modal-title">Stock History</h3>
+      <button class="modal-close" onclick="closeModal('logs-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="logs-modal-body">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('logs-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BOM LINE MODAL ── -->
+<div id="bom-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="bom-modal-title">Add BOM Line</h3>
+      <button class="modal-close" onclick="closeModal('bom-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="bom-line-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Product Name *</label>
+          <input type="text" id="bom-product" class="form-input" placeholder="e.g. 2-Door Wardrobe">
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Material *</label>
+          <select id="bom-material" class="form-input">
+            <option value="">— Select material —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Qty per Unit *</label>
+          <input type="number" id="bom-qty-per-unit" class="form-input" step="0.0001" min="0.0001" placeholder="e.g. 2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes / Panel Label</label>
+          <input type="text" id="bom-line-notes" class="form-input" placeholder="e.g. Side Panel">
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label" style="color:var(--text-muted);font-size:12px">Panel Dimensions (mm) — leave blank for non-panel items</label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cut Length (mm)</label>
+          <input type="number" id="bom-cut-length" class="form-input" step="1" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cut Width (mm)</label>
+          <input type="number" id="bom-cut-width" class="form-input" step="1" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Thickness (mm)</label>
+          <input type="number" id="bom-cut-thickness" class="form-input" step="1" min="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('bom-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBOMLine()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── STOCK CHECK MODAL ── -->
+<div id="stock-check-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <h3>Material Stock Check</h3>
+      <button class="modal-close" onclick="closeModal('stock-check-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-secondary);margin-bottom:12px">Enter products to check if materials are sufficient.</p>
+      <div id="sc-items-list"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="addStockCheckItem()">+ Add Product</button>
+      <div id="sc-result" style="margin-top:16px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('stock-check-modal')">Close</button>
+      <button class="btn btn-primary" onclick="runStockCheck()">Check Availability</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-backdrop').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+
+const _inv_display = localStorage.getItem('ao_display_name') || localStorage.getItem('ao_username') || '';
+const _inv_role = localStorage.getItem('ao_role') || '';
+document.getElementById('header-user').textContent = _inv_display;
+document.getElementById('sidebar-role').textContent = _inv_role || 'Admin';
+
+const invTabTitles = { materials: 'Materials', bom: 'BOM Editor', cutlist: 'Cut List' };
+
+function activateInvTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+  document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
+  const tabEl = document.getElementById('tab-' + tabName);
+  if (tabEl) { tabEl.classList.remove('hidden'); tabEl.classList.add('active'); }
+  document.querySelector(`.nav-item[data-tab="${tabName}"]`)?.classList.add('active');
+  document.getElementById('page-breadcrumb').textContent = invTabTitles[tabName] || tabName;
+}
+
+document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    activateInvTab(item.dataset.tab);
+  });
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.clear(); window.location.href = '/login';
+});
+initEntitySwitcher();
+</script>
+<script src="inventory.js"></script>
+</body>
+</html>

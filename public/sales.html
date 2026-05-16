@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Office — Sales</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <script src="entity.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR BACKDROP (mobile) -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">AO</div>
+      <div>
+        <div class="logo-name">Amber Office</div>
+        <div class="logo-role" id="sidebar-role">Admin</div>
+      </div>
+    </div>
+
+    <!-- Company Switcher (admin/super_admin only) -->
+    <div class="entity-switcher hidden" id="entity-switcher">
+      <button class="entity-btn" id="entity-btn-aosb" onclick="switchEntity('AOSB')">
+        <span class="entity-dot entity-dot-aosb"></span>
+        <span>AOSB</span>
+        <span class="entity-sub">Trading</span>
+      </button>
+      <button class="entity-btn" id="entity-btn-adsb" onclick="switchEntity('ADSB')">
+        <span class="entity-dot entity-dot-adsb"></span>
+        <span>ADSB</span>
+        <span class="entity-sub">Mfg</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section nav-section-production">
+        <div class="nav-label">Production</div>
+        <a class="nav-item" href="/">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a class="nav-item" href="/#orders">
+          <span class="nav-icon">📋</span> Job Orders
+        </a>
+        <a class="nav-item" href="/#oee">
+          <span class="nav-icon">📈</span> OEE
+        </a>
+        <a class="nav-item" href="/#report">
+          <span class="nav-icon">🤖</span> AI Report
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Sales &amp; CRM</div>
+        <a class="nav-item" href="/crm">
+          <span class="nav-icon">👥</span> Leads
+        </a>
+        <a class="nav-item" href="/crm">
+          <span class="nav-icon">📝</span> Quotations
+        </a>
+        <a class="nav-item active" data-tab="so" href="#">
+          <span class="nav-icon">📦</span> Sales Orders
+        </a>
+        <a class="nav-item" data-tab="payments" href="#">
+          <span class="nav-icon">💳</span> Payments
+        </a>
+        <a class="nav-item" data-tab="invoices" href="#">
+          <span class="nav-icon">🧾</span> Invoices
+        </a>
+        <a class="nav-item" data-tab="tasks" href="#">
+          <span class="nav-icon">⚡</span> Task Queue
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Warehouse</div>
+        <a class="nav-item" href="/inventory">
+          <span class="nav-icon">🗄️</span> Inventory
+        </a>
+        <a class="nav-item" href="/inventory#bom">
+          <span class="nav-icon">🔩</span> BOM
+        </a>
+        <a class="nav-item" href="/settings#portal-products">
+          <span class="nav-icon">🛋️</span> Products
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <a class="nav-item" href="/#users">
+          <span class="nav-icon">👤</span> Users
+        </a>
+        <a class="nav-item" href="/settings">
+          <span class="nav-icon">⚙️</span> Settings
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-footer-btn theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">☾</span> Dark Mode
+      </button>
+      <a href="/worker" target="_blank" class="sidebar-footer-btn">
+        <span>🔧</span> Worker View
+      </a>
+      <button class="sidebar-footer-btn" id="logout-btn">
+        <span>⏻</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-wrap">
+    <header class="page-header">
+      <div class="page-header-left">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        <div>
+          <div class="page-title" id="page-title">Sales</div>
+          <div class="breadcrumb">Home • <span id="page-breadcrumb">Sales Orders</span></div>
+        </div>
+      </div>
+      <div class="page-header-right">
+        <span id="active-entity-badge" class="entity-header-badge"></span>
+        <span id="header-user" class="header-user-badge"></span>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- ── TASK QUEUE TAB ── -->
+      <div id="tab-tasks" class="tab-content hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="font-size:16px;font-weight:600">Pending Actions <span id="task-count" style="font-size:13px;color:var(--text-muted);font-weight:400"></span></h2>
+          <button class="btn btn-outline btn-sm" onclick="loadTaskQueue()">↻ Refresh</button>
+        </div>
+        <div id="task-list">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+
+      <!-- ── SALES ORDERS TAB ── -->
+      <div id="tab-so" class="tab-content active">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm so-filter-btn active" data-status="">All</button>
+            <button class="btn btn-outline btn-sm so-filter-btn" data-status="draft">Draft</button>
+            <button class="btn btn-outline btn-sm so-filter-btn" data-status="deposit_pending">Payment Pending</button>
+            <button class="btn btn-outline btn-sm so-filter-btn" data-status="confirmed">Confirmed</button>
+            <button class="btn btn-outline btn-sm so-filter-btn" data-status="in_production">In Production</button>
+            <button class="btn btn-outline btn-sm so-filter-btn" data-status="ready">Ready</button>
+            <button class="btn btn-outline btn-sm so-filter-btn" data-status="delivered">Delivered</button>
+            <button class="btn btn-outline btn-sm so-filter-btn" data-status="paid">Paid</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openSOForm()">+ New SO</button>
+        </div>
+        <div id="so-table-wrap" class="table-wrap">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+
+      <!-- ── PAYMENTS TAB ── -->
+      <div id="tab-payments" class="tab-content hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="font-size:16px;font-weight:600">Customer Payment Submissions</h2>
+          <button class="btn btn-outline btn-sm" onclick="loadPortalPaymentsSales()">↻ Refresh</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn btn-outline btn-sm sp-filter-btn active" data-st="">All</button>
+          <button class="btn btn-outline btn-sm sp-filter-btn" data-st="pending">Pending</button>
+          <button class="btn btn-outline btn-sm sp-filter-btn" data-st="verified">Verified</button>
+          <button class="btn btn-outline btn-sm sp-filter-btn" data-st="rejected">Rejected</button>
+        </div>
+        <div id="portal-payments-sales-wrap" class="table-wrap">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+
+      <!-- ── INVOICES TAB ── -->
+      <div id="tab-invoices" class="tab-content hidden">
+        <!-- SQL Account Export bar -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:var(--content-bg);border-radius:8px;border:1px solid var(--border)">
+          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">SQL Export:</span>
+          <input type="date" id="sql-from-date" class="form-input" style="width:130px;font-size:12px;padding:4px 8px">
+          <span style="font-size:12px;color:var(--text-muted)">to</span>
+          <input type="date" id="sql-to-date" class="form-input" style="width:130px;font-size:12px;padding:4px 8px">
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="checkbox" id="sql-unsynced-only"> Unsynced only
+          </label>
+          <button class="btn btn-outline btn-sm" onclick="exportToSQL()">⬇ Export CSV → SQL Account</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm inv-filter-btn active" data-status="">All</button>
+            <button class="btn btn-outline btn-sm inv-filter-btn" data-status="draft">Draft</button>
+            <button class="btn btn-outline btn-sm inv-filter-btn" data-status="sent">Sent</button>
+            <button class="btn btn-outline btn-sm inv-filter-btn" data-status="partial">Partial</button>
+            <button class="btn btn-outline btn-sm inv-filter-btn" data-status="overdue">Overdue</button>
+            <button class="btn btn-outline btn-sm inv-filter-btn" data-status="paid">Paid</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openInvoiceForm()">+ New Invoice</button>
+        </div>
+        <div id="inv-table-wrap" class="table-wrap">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-wrap -->
+
+</div><!-- /app-layout -->
+
+<!-- ── MODALS (outside app-layout) ── -->
+
+<!-- SO MODAL -->
+<div id="so-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:700px">
+    <div class="modal-header">
+      <h3 id="so-modal-title">New Sales Order</h3>
+      <button class="modal-close" onclick="closeModal('so-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="so-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Customer *</label>
+          <select id="so-customer" class="form-input">
+            <option value="">— Select customer —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Term</label>
+          <select id="so-payment-term" class="form-input">
+            <option value="cash">Cash</option>
+            <option value="50_50">50/50 Deposit</option>
+            <option value="net30">Net 30</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Delivery Date</label>
+          <input type="date" id="so-delivery-date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Delivery Type</label>
+          <select id="so-delivery-type" class="form-input">
+            <option value="delivery">Delivery</option>
+            <option value="pickup">Pickup</option>
+            <option value="installation">Installation</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Delivery Address</label>
+          <input type="text" id="so-delivery-address" class="form-input">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:8px">
+        <label class="form-label">Items</label>
+        <div id="so-items-list"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="addSOItem()">+ Add Item</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <div class="form-group">
+          <label class="form-label">Subtotal (RM)</label>
+          <input type="number" id="so-subtotal" class="form-input" step="0.01" min="0" oninput="calcSOTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Discount (RM)</label>
+          <input type="number" id="so-discount" class="form-input" step="0.01" min="0" value="0" oninput="calcSOTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total (RM)</label>
+          <input type="number" id="so-total" class="form-input" step="0.01" min="0">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea id="so-notes" class="form-input" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('so-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSO()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SO STATUS / DEPOSIT MODAL -->
+<div id="so-action-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3 id="so-action-title">Update Status</h3>
+      <button class="modal-close" onclick="closeModal('so-action-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="so-action-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('so-action-modal')">Cancel</button>
+      <button class="btn btn-primary" id="so-action-confirm" onclick="confirmSOAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE MODAL -->
+<div id="invoice-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:720px">
+    <div class="modal-header">
+      <h3 id="invoice-modal-title">New Invoice</h3>
+      <button class="modal-close" onclick="closeModal('invoice-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inv-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:4px">
+        <div class="form-group">
+          <label class="form-label">Customer *</label>
+          <select id="inv-customer" class="form-input">
+            <option value="">— Select customer —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sales Order</label>
+          <select id="inv-so" class="form-input">
+            <option value="">— None —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Issuing Entity</label>
+          <select id="inv-entity" class="form-input">
+            <option value="AOSB">AOSB (Trading)</option>
+            <option value="ADSB">ADSB (Manufacturing)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Line items -->
+      <div class="form-group">
+        <label class="form-label">Line Items</label>
+        <div style="display:grid;grid-template-columns:2fr 55px 95px 80px 80px 28px;gap:6px;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--text-muted)">Description</span>
+          <span style="font-size:11px;color:var(--text-muted)">Qty</span>
+          <span style="font-size:11px;color:var(--text-muted)">Unit Price</span>
+          <span style="font-size:11px;color:var(--text-muted)">SST Code</span>
+          <span style="font-size:11px;color:var(--text-muted);text-align:right">Line Total</span>
+          <span></span>
+        </div>
+        <div id="inv-items-list"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="addInvItem()">+ Add Line</button>
+      </div>
+
+      <!-- Totals row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:8px">
+        <div class="form-group">
+          <label class="form-label">Subtotal (RM)</label>
+          <input type="number" id="inv-subtotal" class="form-input" step="0.01" readonly style="background:var(--content-bg)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">SST Amount (RM)</label>
+          <input type="number" id="inv-tax-amount" class="form-input" step="0.01" readonly style="background:var(--content-bg)">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-weight:700">Grand Total (RM)</label>
+          <input type="number" id="inv-total" class="form-input" step="0.01" readonly style="background:var(--content-bg);font-weight:700">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Payment Term</label>
+          <select id="inv-payment-term" class="form-input">
+            <option value="cash">Cash</option>
+            <option value="net30">Net 30</option>
+            <option value="net60">Net 60</option>
+            <option value="50_50">50/50 Deposit</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input type="date" id="inv-due-date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="inv-status" class="form-input">
+            <option value="draft">Draft</option>
+            <option value="sent">Sent</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea id="inv-notes" class="form-input" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('invoice-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInvoice()">Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- LHDN RESULT MODAL -->
+<div id="lhdn-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Enter LHDN Result</h3>
+      <button class="modal-close" onclick="closeModal('lhdn-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="lhdn-inv-id">
+      <p style="margin-bottom:12px;font-size:13px;color:var(--text-secondary)">
+        After SQL Account submits to LHDN MyInvois, paste the returned UUID and validation URL here.
+      </p>
+      <div class="form-group">
+        <label class="form-label">LHDN UUID *</label>
+        <input type="text" id="lhdn-uuid" class="form-input" placeholder="e.g. 3AB7C1D2...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">QR / Validation URL</label>
+        <input type="text" id="lhdn-qr-url" class="form-input" placeholder="https://myinvois.hasil.gov.my/...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="lhdn-status" class="form-input">
+          <option value="valid">Valid</option>
+          <option value="invalid">Invalid</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('lhdn-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLHDNResult()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="payment-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h3>Record Payment</h3>
+      <button class="modal-close" onclick="closeModal('payment-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pay-inv-id">
+      <p id="pay-summary" style="margin-bottom:12px;color:var(--text-secondary)"></p>
+      <div class="form-group">
+        <label class="form-label">Amount Received (RM)</label>
+        <input type="number" id="pay-amount" class="form-input" step="0.01" min="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note</label>
+        <input type="text" id="pay-note" class="form-input" placeholder="e.g. Bank transfer, cheque #">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('payment-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmPayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Sidebar toggle
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  sidebar.classList.toggle('open');
+  backdrop.classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+
+// Set user info
+const _sales_display = localStorage.getItem('ao_display_name') || localStorage.getItem('ao_username') || '';
+const _sales_role = localStorage.getItem('ao_role') || '';
+document.getElementById('header-user').textContent = _sales_display;
+document.getElementById('sidebar-role').textContent = _sales_role || 'Admin';
+
+// Sidebar tab nav for Sales sub-tabs
+const salesTabTitles = { tasks: 'Task Queue', so: 'Sales Orders', invoices: 'Invoices' };
+
+function activateSalesTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+  document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
+  const tabEl = document.getElementById('tab-' + tabName);
+  if (tabEl) { tabEl.classList.remove('hidden'); tabEl.classList.add('active'); }
+  document.querySelector(`.nav-item[data-tab="${tabName}"]`)?.classList.add('active');
+  const title = salesTabTitles[tabName] || tabName;
+  document.getElementById('page-breadcrumb').textContent = title;
+}
+
+document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+  item.addEventListener('click', (e) => {
+    e.preventDefault();
+    activateSalesTab(item.dataset.tab);
+  });
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.clear(); window.location.href = '/login';
+});
+initEntitySwitcher();
+</script>
+<script src="sales.js"></script>
+</body>
+</html>

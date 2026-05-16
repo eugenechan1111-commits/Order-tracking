@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Login — Amber Office</title>
+  <script src="theme.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f4f6fb; --surface: #fff; --border: #e5e7eb;
+      --text: #111827; --text-muted: #6b7280;
+      --indigo: #4f46e5; --indigo-light: #eef2ff;
+      --red: #dc2626; --red-light: #fee2e2;
+      --green: #16a34a; --green-light: #dcfce7;
+    }
+    [data-theme="dark"] body, [data-theme="dark"] {
+      --bg: #0f1117; --surface: #1a1d2e; --border: #2d3148;
+      --text: #f1f5f9; --text-muted: #94a3b8;
+      --indigo-light: #1e1b4b; --red-light: #2d0a0a; --green-light: #052e16;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    .page-header {
+      background: var(--indigo); color: #fff;
+      padding: 0 24px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { font-size: 17px; font-weight: 800; letter-spacing: -.4px; }
+    .theme-btn { background: rgba(255,255,255,.15); border: none; color: #fff; padding: 5px 12px; border-radius: 16px; cursor: pointer; font-size: 12px; }
+    .theme-btn:hover { background: rgba(255,255,255,.25); }
+
+    .center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 16px; }
+
+    .login-box {
+      background: var(--surface); border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.12);
+      padding: 40px 36px; width: 100%; max-width: 400px;
+    }
+    .login-icon { font-size: 36px; margin-bottom: 12px; }
+    .login-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .login-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
+
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    input[type=text], input[type=password] {
+      width: 100%; padding: 12px 14px;
+      border: 2px solid var(--border); border-radius: 10px;
+      font-size: 15px; background: var(--bg); color: var(--text);
+      outline: none; transition: border-color .15s;
+    }
+    input:focus { border-color: var(--indigo); }
+
+    .login-btn {
+      width: 100%; padding: 13px;
+      background: var(--indigo); color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      margin-top: 4px; transition: opacity .15s;
+    }
+    .login-btn:hover { opacity: .88; }
+    .login-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .alert { padding: 12px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 18px; display: none; }
+    .alert.error { background: var(--red-light); color: var(--red); display: block; }
+    .alert.success { background: var(--green-light); color: var(--green); display: block; }
+
+    .help-text { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="brand">Amber Office</div>
+    <button class="theme-btn theme-toggle-btn" onclick="toggleTheme()">☾ Dark</button>
+  </header>
+
+  <div class="center">
+    <div class="login-box">
+      <div class="login-icon">📦</div>
+      <div class="login-title">Customer Portal</div>
+      <div class="login-sub">Sign in to track your orders</div>
+
+      <div id="alert" class="alert"></div>
+
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" type="text" placeholder="Your login username" autocomplete="username" autocapitalize="off">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="Your password" autocomplete="current-password">
+      </div>
+      <button id="login-btn" class="login-btn" onclick="doLogin()">Sign In</button>
+      <div class="help-text">Need access? Contact Amber Office to get your login credentials.</div>
+    </div>
+  </div>
+
+  <script>
+    // If already logged in, redirect
+    (function() {
+      const t = localStorage.getItem('ct_token');
+      if (t) {
+        try {
+          const p = JSON.parse(atob(t.split('.')[1]));
+          if (!p.exp || p.exp * 1000 > Date.now()) { window.location.href = '/customer'; return; }
+        } catch(e) {}
+        localStorage.removeItem('ct_token');
+        localStorage.removeItem('ct_display_name');
+        localStorage.removeItem('ct_customer_name');
+      }
+    })();
+
+    document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('password').focus(); });
+
+    async function doLogin() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const alertEl  = document.getElementById('alert');
+      const btn      = document.getElementById('login-btn');
+
+      alertEl.className = 'alert';
+      if (!username || !password) { alertEl.className = 'alert error'; alertEl.textContent = 'Please enter username and password.'; return; }
+
+      btn.disabled = true; btn.textContent = 'Signing in…';
+      try {
+        const res = await fetch('/api/customer-auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { alertEl.className = 'alert error'; alertEl.textContent = data.error || 'Login failed.'; return; }
+
+        localStorage.setItem('ct_token', data.token);
+        localStorage.setItem('ct_display_name', data.display_name || username);
+        localStorage.setItem('ct_customer_name', data.customer_name || '');
+        window.location.href = '/customer';
+      } catch(e) {
+        alertEl.className = 'alert error'; alertEl.textContent = 'Connection error. Please try again.';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Sign In';
+      }
+    }
+  </script>
+</body>
+</html>

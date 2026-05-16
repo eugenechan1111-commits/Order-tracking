@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Office — CRM</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <script src="entity.js"></script>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR BACKDROP (mobile) -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">AO</div>
+      <div>
+        <div class="logo-name">Amber Office</div>
+        <div class="logo-role" id="sidebar-role">Admin</div>
+      </div>
+    </div>
+
+    <!-- Company Switcher (admin/super_admin only) -->
+    <div class="entity-switcher hidden" id="entity-switcher">
+      <button class="entity-btn" id="entity-btn-aosb" onclick="switchEntity('AOSB')">
+        <span class="entity-dot entity-dot-aosb"></span>
+        <span>AOSB</span>
+        <span class="entity-sub">Trading</span>
+      </button>
+      <button class="entity-btn" id="entity-btn-adsb" onclick="switchEntity('ADSB')">
+        <span class="entity-dot entity-dot-adsb"></span>
+        <span>ADSB</span>
+        <span class="entity-sub">Mfg</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section nav-section-production">
+        <div class="nav-label">Production</div>
+        <a class="nav-item" href="/">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a class="nav-item" href="/#orders">
+          <span class="nav-icon">📋</span> Job Orders
+        </a>
+        <a class="nav-item" href="/#oee">
+          <span class="nav-icon">📈</span> OEE
+        </a>
+        <a class="nav-item" href="/#report">
+          <span class="nav-icon">🤖</span> AI Report
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Sales &amp; CRM</div>
+        <a class="nav-item active" data-tab="leads" href="#">
+          <span class="nav-icon">👥</span> Leads
+        </a>
+        <a class="nav-item" data-tab="customers" href="#">
+          <span class="nav-icon">🏢</span> Customers
+        </a>
+        <a class="nav-item" data-tab="quotations" href="#">
+          <span class="nav-icon">📝</span> Quotations
+        </a>
+        <a class="nav-item" href="/sales">
+          <span class="nav-icon">📦</span> Sales Orders
+        </a>
+        <a class="nav-item" href="/sales">
+          <span class="nav-icon">🧾</span> Invoices
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Warehouse</div>
+        <a class="nav-item" href="/inventory">
+          <span class="nav-icon">🗄️</span> Inventory
+        </a>
+        <a class="nav-item" href="/inventory#bom">
+          <span class="nav-icon">🔩</span> BOM
+        </a>
+        <a class="nav-item" href="/settings#portal-products">
+          <span class="nav-icon">🛋️</span> Products
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <a class="nav-item" href="/#users">
+          <span class="nav-icon">👤</span> Users
+        </a>
+        <a class="nav-item" href="/settings">
+          <span class="nav-icon">⚙️</span> Settings
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-footer-btn theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">☾</span> Dark Mode
+      </button>
+      <a href="/worker" target="_blank" class="sidebar-footer-btn">
+        <span>🔧</span> Worker View
+      </a>
+      <button class="sidebar-footer-btn" id="logout-btn">
+        <span>⏻</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-wrap">
+    <header class="page-header">
+      <div class="page-header-left">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        <div>
+          <div class="page-title" id="page-title">CRM</div>
+          <div class="breadcrumb">Home • <span id="page-breadcrumb">Leads</span></div>
+        </div>
+      </div>
+      <div class="page-header-right">
+        <span id="active-entity-badge" class="entity-header-badge"></span>
+        <span id="header-user" class="header-user-badge"></span>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- ── LEADS TAB ── -->
+      <div id="tab-leads" class="tab-content active">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm lead-filter-btn active" data-status="">All</button>
+            <button class="btn btn-outline btn-sm lead-filter-btn" data-status="new">New</button>
+            <button class="btn btn-outline btn-sm lead-filter-btn" data-status="quoted">Quoted</button>
+            <button class="btn btn-outline btn-sm lead-filter-btn" data-status="converted">Converted</button>
+            <button class="btn btn-outline btn-sm lead-filter-btn" data-status="lost">Lost</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openLeadForm()">+ New Lead</button>
+        </div>
+        <div id="leads-table-wrap" class="table-wrap">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+
+      <!-- ── CUSTOMERS TAB ── -->
+      <div id="tab-customers" class="tab-content hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <input type="text" id="customer-search" placeholder="Search customers…" class="form-input" style="max-width:300px" oninput="filterCustomers()">
+          <button class="btn btn-primary btn-sm" id="new-customer-btn" onclick="openCustomerForm()">+ New Customer</button>
+        </div>
+        <div id="customers-table-wrap" class="table-wrap">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+
+      <!-- ── QUOTATIONS TAB (with Requests sub-tab) ── -->
+      <div id="tab-quotations" class="tab-content hidden">
+        <!-- Sub-tab switcher -->
+        <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)">
+          <button class="qt-subtab active" data-sub="quotes" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--indigo);border-bottom:2px solid var(--indigo);margin-bottom:-2px">Quotations</button>
+          <button class="qt-subtab" data-sub="requests" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-2px">
+            Portal Requests <span id="portal-req-badge2" style="display:none;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px;margin-left:4px">0</span>
+          </button>
+        </div>
+
+        <!-- Quotations sub-panel -->
+        <div id="sub-quotes">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm quote-filter-btn active" data-status="">All</button>
+              <button class="btn btn-outline btn-sm quote-filter-btn" data-status="draft">Draft</button>
+              <button class="btn btn-outline btn-sm quote-filter-btn" data-status="sent">Sent</button>
+              <button class="btn btn-outline btn-sm quote-filter-btn" data-status="accepted">Accepted</button>
+              <button class="btn btn-outline btn-sm quote-filter-btn" data-status="rejected">Rejected</button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openQuoteForm()">+ New Quote</button>
+          </div>
+          <div id="quotes-table-wrap" class="table-wrap">
+            <div class="loading"><div class="spinner"></div> Loading…</div>
+          </div>
+        </div>
+
+        <!-- Portal Requests sub-panel -->
+        <div id="sub-requests" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm pr-filter-btn active" data-status="">All</button>
+              <button class="btn btn-outline btn-sm pr-filter-btn" data-status="pending">Pending</button>
+              <button class="btn btn-outline btn-sm pr-filter-btn" data-status="quoted">Quoted</button>
+              <button class="btn btn-outline btn-sm pr-filter-btn" data-status="converted">Converted</button>
+              <button class="btn btn-outline btn-sm pr-filter-btn" data-status="rejected">Rejected</button>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="loadPortalRequests()">↻ Refresh</button>
+          </div>
+          <div id="portal-requests-wrap" class="table-wrap">
+            <div class="loading"><div class="spinner"></div> Loading…</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-wrap -->
+
+</div><!-- /app-layout -->
+
+<!-- ── MODALS (outside app-layout) ── -->
+
+<!-- LEAD MODAL -->
+<div id="lead-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="lead-modal-title">New Lead</h3>
+      <button class="modal-close" onclick="closeModal('lead-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="lead-id">
+      <div class="form-group">
+        <label class="form-label">Customer</label>
+        <select id="lead-customer" class="form-input">
+          <option value="">— Select or type below —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Customer Name (if new)</label>
+        <input type="text" id="lead-customer-name" class="form-input" placeholder="Company / contact name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Source</label>
+        <select id="lead-source" class="form-input">
+          <option value="whatsapp">WhatsApp</option>
+          <option value="referral">Referral</option>
+          <option value="online">Online</option>
+          <option value="walk_in">Walk-in</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="lead-status" class="form-input">
+          <option value="new">New</option>
+          <option value="quoted">Quoted</option>
+          <option value="converted">Converted</option>
+          <option value="lost">Lost</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea id="lead-notes" class="form-input" rows="3" placeholder="What does the customer want?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('lead-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLead()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMER MODAL -->
+<div id="customer-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <h3 id="customer-modal-title">New Customer</h3>
+      <button class="modal-close" onclick="closeModal('customer-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="customer-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Company Name *</label>
+          <input type="text" id="cust-company" class="form-input" placeholder="e.g. ABC Sdn Bhd">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Person</label>
+          <input type="text" id="cust-contact" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="text" id="cust-phone" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="cust-email" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Billing Email</label>
+          <input type="email" id="cust-billing-email" class="form-input">
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Address (Delivery)</label>
+          <textarea id="cust-address" class="form-input" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Term</label>
+          <select id="cust-payment-term" class="form-input">
+            <option value="cash">Cash</option>
+            <option value="50_50">50/50 Deposit</option>
+            <option value="net30">Net 30</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Credit Limit (RM)</label>
+          <input type="number" id="cust-credit-limit" class="form-input" value="0" min="0">
+        </div>
+
+        <!-- LHDN / Tax fields -->
+        <div class="form-group" style="grid-column:span 2;margin-top:4px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">LHDN / Tax Info</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">TIN (Tax ID)</label>
+          <input type="text" id="cust-tin" class="form-input" placeholder="e.g. C12345678900">
+        </div>
+        <div class="form-group">
+          <label class="form-label">SSM Registration No</label>
+          <input type="text" id="cust-registration_no" class="form-input" placeholder="e.g. 1234567-A">
+        </div>
+        <div class="form-group">
+          <label class="form-label">SST Registration No</label>
+          <input type="text" id="cust-sst_no" class="form-input" placeholder="e.g. W10-1234-12345678">
+        </div>
+        <div class="form-group">
+          <label class="form-label">SQL Account Code</label>
+          <input type="text" id="cust-sql_account_code" class="form-input" placeholder="e.g. CUST001">
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Billing Address (if different from delivery)</label>
+          <textarea id="cust-billing_address" class="form-input" rows="2"></textarea>
+        </div>
+
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Notes</label>
+          <textarea id="cust-notes" class="form-input" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('customer-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomer()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUOTE MODAL -->
+<div id="quote-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-header">
+      <h3 id="quote-modal-title">New Quotation</h3>
+      <button class="modal-close" onclick="closeModal('quote-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="quote-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Customer *</label>
+          <select id="quote-customer" class="form-input" onchange="onQuoteCustomerChange()">
+            <option value="">— Select customer —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Lead (optional)</label>
+          <select id="quote-lead" class="form-input">
+            <option value="">— None —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valid Until</label>
+          <input type="date" id="quote-valid-until" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="quote-status" class="form-input">
+            <option value="draft">Draft</option>
+            <option value="sent">Sent</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:8px">
+        <label class="form-label">Items</label>
+        <div id="quote-items-list"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="addQuoteItem()">+ Add Item</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <div class="form-group">
+          <label class="form-label">Subtotal (RM)</label>
+          <input type="number" id="quote-subtotal" class="form-input" step="0.01" min="0" oninput="calcQuoteTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Discount (RM)</label>
+          <input type="number" id="quote-discount" class="form-input" step="0.01" min="0" value="0" oninput="calcQuoteTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total (RM)</label>
+          <input type="number" id="quote-total" class="form-input" step="0.01" min="0">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea id="quote-notes" class="form-input" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('quote-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveQuote()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONVERT QUOTE MODAL -->
+<div id="convert-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Convert to Sales Order</h3>
+      <button class="modal-close" onclick="closeModal('convert-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="convert-summary" style="margin-bottom:16px;color:var(--text-secondary)"></p>
+      <p style="font-size:13px;color:var(--text-muted)">This will create a Sales Order linked to this quotation. For non-cash payment terms, production will be held until deposit is received.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('convert-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmConvert()">Convert to SO</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Sidebar toggle
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  sidebar.classList.toggle('open');
+  backdrop.classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+
+// Set user info
+const _crm_display = localStorage.getItem('ao_display_name') || localStorage.getItem('ao_username') || '';
+const _crm_role = localStorage.getItem('ao_role') || '';
+document.getElementById('header-user').textContent = _crm_display;
+document.getElementById('sidebar-role').textContent = _crm_role || 'Admin';
+
+// Sidebar tab nav for CRM sub-tabs
+document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+  item.addEventListener('click', (e) => {
+    e.preventDefault();
+    const tab = item.dataset.tab;
+    activateCRMTab(tab);
+  });
+});
+
+const crmTabTitles = { leads: 'Leads', customers: 'Customers', quotations: 'Quotations', 'portal-requests': 'Portal Requests' };
+
+function activateCRMTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+  document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.remove('active'));
+  const tabEl = document.getElementById('tab-' + tabName);
+  if (tabEl) { tabEl.classList.remove('hidden'); tabEl.classList.add('active'); }
+  document.querySelector(`.nav-item[data-tab="${tabName}"]`)?.classList.add('active');
+  const title = crmTabTitles[tabName] || tabName;
+  document.getElementById('page-breadcrumb').textContent = title;
+  if (typeof closeSidebar === 'function') closeSidebar();
+  // Trigger data load for each tab
+  if (tabName === 'leads')       { if (typeof loadLeads      === 'function') loadLeads(); }
+  if (tabName === 'customers')   { if (typeof loadCustomers  === 'function') loadCustomers(); }
+  if (tabName === 'quotations')  {
+    if (typeof loadQuotations === 'function') loadQuotations();
+    // Load portal request badge count
+    if (typeof loadPortalRequests === 'function') loadPortalRequestsBadge();
+  }
+}
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.clear(); window.location.href = '/login';
+});
+initEntitySwitcher();
+
+// Quotations sub-tab switching
+document.querySelectorAll('.qt-subtab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const sub = btn.dataset.sub;
+    document.querySelectorAll('.qt-subtab').forEach(b => {
+      b.style.color = 'var(--text-muted)';
+      b.style.borderBottomColor = 'transparent';
+    });
+    btn.style.color = 'var(--indigo)';
+    btn.style.borderBottomColor = 'var(--indigo)';
+    document.getElementById('sub-quotes').style.display = sub === 'quotes' ? 'block' : 'none';
+    document.getElementById('sub-requests').style.display = sub === 'requests' ? 'block' : 'none';
+    if (sub === 'requests' && typeof loadPortalRequests === 'function') loadPortalRequests();
+  });
+});
+
+function loadPortalRequestsBadge() {
+  if (typeof loadPortalRequests !== 'function') return;
+  fetch('/api/customer-portal/admin/requests?status=pending', {
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem('ao_token') }
+  }).then(r => r.json()).then(d => {
+    const badge = document.getElementById('portal-req-badge2');
+    if (badge) { badge.textContent = d.length; badge.style.display = d.length > 0 ? 'inline' : 'none'; }
+  }).catch(() => {});
+}
+</script>
+<script src="crm.js"></script>
+
+<!-- SO Confirm Modal -->
+<div id="so-confirm-modal" class="modal hidden">
+  <div class="modal-box" style="max-width:580px;align-self:flex-start;margin:auto">
+    <h3 id="so-confirm-title">Confirm as Sales Order</h3>
+    <input type="hidden" id="so-confirm-req-id">
+    <input type="hidden" id="so-confirm-items-json">
+    <input type="hidden" id="so-confirm-total">
+
+    <div style="background:var(--gray-50,#f8fafc);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Customer</div>
+      <div style="font-weight:600" id="so-confirm-customer-name">—</div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Order Items</div>
+      <div id="so-confirm-items-preview" style="border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;max-height:200px;overflow-y:auto"></div>
+      <div style="text-align:right;font-size:15px;font-weight:700;margin-top:8px;color:var(--indigo)">Total: <span id="so-confirm-total-display">RM 0.00</span></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="form-group" style="grid-column:span 2;margin:0">
+        <label class="form-label">Link to Customer Record *</label>
+        <select id="so-confirm-customer" class="form-input"></select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Delivery Date</label>
+        <input type="date" id="so-confirm-delivery-date" class="form-input">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Remarks / Notes</label>
+        <input type="text" id="so-confirm-notes" class="form-input" placeholder="Internal notes…">
+      </div>
+    </div>
+
+    <div id="so-confirm-alert" class="alert" style="display:none;margin-bottom:12px"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="confirmPortalSO()">✓ Create Sales Order</button>
+      <button class="btn btn-outline" onclick="document.getElementById('so-confirm-modal').classList.add('hidden')">Cancel</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

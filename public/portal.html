@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Office — Customer Portal</title>
+  <script src="theme.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --surface2: #f8fafc;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-secondary: #374151;
+      --text-muted: #6b7280;
+      --indigo: #4f46e5;
+      --indigo-dark: #3730a3;
+      --indigo-light: #eef2ff;
+      --green: #16a34a;
+      --green-light: #dcfce7;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --orange: #d97706;
+      --orange-light: #fef3c7;
+      --blue: #2563eb;
+      --blue-light: #dbeafe;
+      --sidebar-bg: #1e1b4b;
+      --sidebar-text: rgba(255,255,255,.72);
+      --sidebar-active: rgba(255,255,255,.12);
+      --sidebar-hover: rgba(255,255,255,.07);
+      --shadow: 0 1px 4px rgba(0,0,0,.08);
+      --radius: 10px;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1117;
+      --surface: #1a1d2e;
+      --surface2: #1f2235;
+      --border: #2d3148;
+      --text: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --indigo-light: #1e1b4b;
+      --green-light: #052e16;
+      --red-light: #2d0a0a;
+      --orange-light: #1c1200;
+      --blue-light: #0c1a40;
+      --sidebar-bg: #13111f;
+      --sidebar-text: rgba(255,255,255,.6);
+      --sidebar-active: rgba(255,255,255,.1);
+      --sidebar-hover: rgba(255,255,255,.05);
+      --shadow: 0 1px 4px rgba(0,0,0,.3);
+    }
+
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* ── Layout ── */
+    .portal-layout { display: flex; min-height: 100vh; width: 100%; }
+
+    /* ── Sidebar ── */
+    .p-sidebar {
+      width: 220px; min-height: 100vh; background: var(--sidebar-bg);
+      display: flex; flex-direction: column; flex-shrink: 0;
+      position: fixed; top: 0; left: 0; height: 100%; z-index: 100;
+      transition: transform .25s;
+    }
+    .p-sidebar-logo {
+      padding: 20px 16px 16px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .p-logo-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--indigo); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+    .p-logo-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .p-logo-sub { font-size: 11px; color: rgba(255,255,255,.4); }
+
+    .p-sidebar-nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+    .p-nav-item {
+      display: flex; align-items: center; gap: 9px; padding: 9px 10px;
+      border-radius: 8px; color: var(--sidebar-text); font-size: 13px; font-weight: 500;
+      cursor: pointer; text-decoration: none; transition: .15s;
+    }
+    .p-nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+    .p-nav-item.active { background: var(--sidebar-active); color: #fff; }
+    .p-nav-icon { font-size: 15px; flex-shrink: 0; }
+
+    .p-sidebar-footer {
+      padding: 10px 8px 16px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .p-footer-btn {
+      display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+      border-radius: 8px; color: var(--sidebar-text); font-size: 12px;
+      cursor: pointer; background: none; border: none; text-align: left;
+      transition: .15s; width: 100%;
+    }
+    .p-footer-btn:hover { background: var(--sidebar-hover); color: #fff; }
+
+    /* Sidebar backdrop (mobile) */
+    .p-sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; }
+    .p-sidebar-backdrop.open { display: block; }
+
+    /* ── Main ── */
+    .p-main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Header ── */
+    .p-header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 20px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .p-header-left { display: flex; align-items: center; gap: 10px; }
+    .p-menu-btn { display: none; background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text); padding: 4px; }
+    .p-header-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .p-header-right { display: flex; align-items: center; gap: 10px; }
+    .p-user-badge { font-size: 12px; color: var(--text-muted); background: var(--bg); padding: 4px 10px; border-radius: 20px; }
+
+    /* ── Content ── */
+    .p-content { flex: 1; padding: 20px; }
+
+    /* ── Tabs ── */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── Cards / Panels ── */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .panel-title { font-size: 15px; font-weight: 700; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: .15s; }
+    .btn-primary { background: var(--indigo); color: #fff; }
+    .btn-primary:hover { background: var(--indigo-dark); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--indigo); color: var(--indigo); }
+    .btn-success { background: var(--green); color: #fff; }
+    .btn-success:hover { opacity: .85; }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover { opacity: .85; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-lg { padding: 11px 20px; font-size: 14px; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .03em; }
+    .form-input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg); color: var(--text); outline: none; transition: border-color .15s; }
+    .form-input:focus { border-color: var(--indigo); }
+    select.form-input { cursor: pointer; }
+    textarea.form-input { resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── Product grid ── */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .product-card {
+      background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+      padding: 18px; cursor: pointer; transition: .15s;
+    }
+    .product-card:hover { border-color: var(--indigo); }
+    .product-card.selected { border-color: var(--indigo); background: var(--indigo-light); }
+    .product-card-icon { font-size: 32px; margin-bottom: 8px; }
+    .product-card-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .product-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+    .product-card-price { font-size: 13px; font-weight: 600; color: var(--indigo); margin-top: 8px; }
+
+    /* ── Configurator ── */
+    #configurator { display: none; }
+    #configurator.visible { display: block; }
+    .config-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .price-preview { background: var(--indigo-light); border: 1.5px solid var(--indigo); border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .price-preview-label { font-size: 13px; font-weight: 600; color: var(--indigo); }
+    .price-preview-value { font-size: 22px; font-weight: 800; color: var(--indigo); }
+
+    /* ── Cart ── */
+    .cart-item { border:1.5px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:12px; display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start; }
+    .cart-item-name { font-size:14px; font-weight:700; margin-bottom:4px; }
+    .cart-item-cfg  { font-size:12px; color:var(--text-muted); margin-bottom:8px; line-height:1.6; }
+    .cart-item-footer { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .qty-stepper { display:flex; align-items:center; gap:0; border:1.5px solid var(--border); border-radius:8px; overflow:hidden; }
+    .qty-stepper button { width:30px; height:30px; background:var(--surface2); border:none; cursor:pointer; font-size:16px; color:var(--text); line-height:1; }
+    .qty-stepper button:hover { background:var(--indigo-light); color:var(--indigo); }
+    .qty-stepper input { width:44px; height:30px; border:none; border-left:1.5px solid var(--border); border-right:1.5px solid var(--border); text-align:center; font-size:14px; font-weight:600; background:var(--surface); color:var(--text); }
+    .cart-item-subtotal { font-size:15px; font-weight:700; color:var(--indigo); }
+    .cart-item-remove { color:var(--red); background:none; border:none; cursor:pointer; font-size:18px; padding:4px; line-height:1; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+
+    /* ── Badges ── */
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+    .badge-pending  { background: var(--orange-light); color: #92400e; }
+    .badge-quoted   { background: var(--blue-light); color: #1e3a8a; }
+    .badge-accepted { background: var(--green-light); color: #14532d; }
+    .badge-rejected { background: var(--red-light); color: #7f1d1d; }
+    .badge-converted{ background: var(--indigo-light); color: var(--indigo); }
+    .badge-draft    { background: var(--orange-light); color: #92400e; }
+    .badge-sent     { background: var(--blue-light); color: #1e3a8a; }
+    .badge-verified { background: var(--green-light); color: #14532d; }
+
+    /* ── Order cards (tracking) ── */
+    .order-cards { display: flex; flex-direction: column; gap: 12px; }
+    .order-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .order-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .order-card-no { font-size: 14px; font-weight: 800; }
+    .order-card-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .progress-bar-wrap { background: var(--border); border-radius: 99px; height: 8px; overflow: hidden; margin-bottom: 8px; }
+    .progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--indigo), #7c3aed); transition: width .4s; }
+    .progress-label { font-size: 12px; color: var(--text-muted); }
+    .items-row { margin-top: 10px; font-size: 13px; }
+    .items-toggle { font-size: 12px; color: var(--indigo); cursor: pointer; margin-top: 4px; display: inline-block; }
+
+    /* ── Empty / loading ── */
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+    .empty-icon { font-size: 40px; margin-bottom: 10px; }
+    .empty-text { font-size: 14px; }
+    .loading { text-align: center; padding: 32px; color: var(--text-muted); font-size: 14px; }
+
+    /* ── Alert ── */
+    .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+    .alert-success { background: var(--green-light); color: var(--green); }
+    .alert-error   { background: var(--red-light); color: var(--red); }
+
+    /* ── Account card ── */
+    .account-info { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .info-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .info-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+    .info-value { font-size: 14px; font-weight: 600; }
+
+    /* ── Payment section ── */
+    .payment-method-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .method-card { flex: 1; padding: 14px; border: 2px solid var(--border); border-radius: 10px; cursor: pointer; text-align: center; transition: .15s; }
+    .method-card:hover { border-color: var(--indigo); }
+    .method-card.selected { border-color: var(--indigo); background: var(--indigo-light); }
+    .method-icon { font-size: 24px; margin-bottom: 6px; }
+    .method-label { font-size: 12px; font-weight: 700; }
+    .method-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.hidden { display: none; }
+    .modal-box { background: var(--surface); border-radius: 16px; padding: 28px; width: 100%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .modal-title { font-size: 16px; font-weight: 800; }
+    .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .p-sidebar { transform: translateX(-100%); }
+      .p-sidebar.open { transform: translateX(0); }
+      .p-main { margin-left: 0; }
+      .p-menu-btn { display: block; }
+      .form-row, .config-fields, .form-row-3 { grid-template-columns: 1fr; }
+      .account-info { grid-template-columns: 1fr; }
+      .payment-method-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div class="portal-layout">
+
+  <!-- Sidebar backdrop -->
+  <div class="p-sidebar-backdrop" id="p-sidebar-backdrop" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="p-sidebar" id="p-sidebar">
+    <div class="p-sidebar-logo">
+      <div class="p-logo-icon">AO</div>
+      <div>
+        <div class="p-logo-name">Amber Office</div>
+        <div class="p-logo-sub">Customer Portal</div>
+      </div>
+    </div>
+
+    <nav class="p-sidebar-nav">
+      <a class="p-nav-item active" data-ptab="quote" href="#">
+        <span class="p-nav-icon">🛋️</span> Products
+      </a>
+      <a class="p-nav-item" data-ptab="cart" href="#" style="position:relative">
+        <span class="p-nav-icon">🛒</span> My Cart
+        <span id="cart-badge" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#ef4444;color:#fff;border-radius:99px;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 5px">0</span>
+      </a>
+      <a class="p-nav-item" data-ptab="quotations" href="#">
+        <span class="p-nav-icon">📝</span> My Purchase Order
+      </a>
+      <a class="p-nav-item" data-ptab="orders" href="#">
+        <span class="p-nav-icon">📦</span> My Orders
+      </a>
+      <a class="p-nav-item" data-ptab="payment" href="#">
+        <span class="p-nav-icon">💳</span> Make Payment
+      </a>
+      <a class="p-nav-item" data-ptab="account" href="#">
+        <span class="p-nav-icon">👤</span> My Account
+      </a>
+    </nav>
+
+    <div class="p-sidebar-footer">
+      <button class="p-footer-btn theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">☾</span> Dark Mode
+      </button>
+      <button class="p-footer-btn" id="portal-logout-btn">
+        <span>⏻</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="p-main">
+    <header class="p-header">
+      <div class="p-header-left">
+        <button class="p-menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="p-header-title" id="p-page-title">Quote Request</div>
+      </div>
+      <div class="p-header-right">
+        <span class="p-user-badge" id="p-user-badge">—</span>
+      </div>
+    </header>
+
+    <div class="p-content">
+
+      <!-- ── QUOTE REQUEST TAB ── -->
+      <div id="tab-quote" class="tab-content active">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Products</div>
+          </div>
+          <div id="product-grid" class="product-grid">
+            <div class="loading">Loading products…</div>
+          </div>
+        </div>
+
+        <div id="configurator">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title" id="config-product-name">Configure</div>
+            </div>
+
+            <div id="config-fields" class="config-fields"></div>
+
+            <div class="price-preview">
+              <div class="price-preview-label">Estimated Price</div>
+              <div class="price-preview-value" id="price-preview-value">RM 0.00</div>
+            </div>
+            <div id="price-breakdown" style="display:none;margin-bottom:16px;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;font-size:13px">
+              <div style="background:var(--surface2);padding:8px 14px;font-weight:600;font-size:12px;color:var(--text-muted);letter-spacing:.04em;text-transform:uppercase">Cost Breakdown</div>
+              <div id="price-breakdown-rows"></div>
+              <div id="price-breakdown-footer" style="padding:8px 14px;background:var(--indigo-light);border-top:1.5px solid var(--indigo);display:flex;justify-content:space-between;font-weight:700;color:var(--indigo)"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes / Additional Requirements</label>
+              <textarea id="req-notes" class="form-input" rows="3" placeholder="Any special requirements, dimensions, finishes, or questions…"></textarea>
+            </div>
+
+            <div id="req-alert" class="alert" style="display:none"></div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-lg" onclick="addToCart()">🛒 Add to Cart</button>
+              <button class="btn btn-outline btn-lg" onclick="submitQuoteRequest()" style="font-size:14px">📩 Purchase This Item Only</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY CART TAB ── -->
+      <div id="tab-cart" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">My Cart</div>
+            <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="clearCart()">🗑 Clear Cart</button>
+          </div>
+          <div id="cart-items-wrap">
+            <div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-text">Your cart is empty. Configure a product and click "Add to Cart".</div></div>
+          </div>
+          <!-- Cart summary + checkout -->
+          <div id="cart-checkout" style="display:none;margin-top:20px;border-top:2px solid var(--border);padding-top:20px">
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label">Notes / Special Requirements</label>
+              <textarea id="cart-notes" class="form-input" rows="3" placeholder="Delivery address, installation notes, finish preferences…"></textarea>
+            </div>
+            <div id="cart-alert" class="alert" style="display:none"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:8px">
+              <div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:2px">Estimated Total</div>
+                <div style="font-size:26px;font-weight:800;color:var(--indigo)" id="cart-total">RM 0.00</div>
+              </div>
+              <button class="btn btn-primary btn-lg" onclick="submitCart()">📩 Submit Purchase Order</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY QUOTATIONS TAB ── -->
+      <div id="tab-quotations" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">My Purchase Order</div>
+            <button class="btn btn-outline btn-sm" onclick="loadQuotations()">↻ Refresh</button>
+          </div>
+          <div id="quotations-wrap">
+            <div class="loading">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY ORDERS TAB ── -->
+      <div id="tab-orders" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">My Orders</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="text" id="order-search" class="form-input" style="width:200px;padding:6px 10px;font-size:13px" placeholder="Search order #…" oninput="loadOrders()">
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('order-search').value='';loadOrders()">All</button>
+            </div>
+          </div>
+          <div id="orders-wrap">
+            <div class="loading">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MAKE PAYMENT TAB ── -->
+      <div id="tab-payment" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Submit Payment</div>
+          </div>
+
+          <div class="payment-method-row">
+            <div class="method-card selected" id="method-bank" onclick="selectMethod('bank_transfer')">
+              <div class="method-icon">🏦</div>
+              <div class="method-label">Bank Transfer</div>
+              <div class="method-sub">Upload bank-in slip</div>
+            </div>
+            <div class="method-card" id="method-credit" onclick="selectMethod('credit_limit')">
+              <div class="method-icon">💳</div>
+              <div class="method-label">Credit Account</div>
+              <div class="method-sub" id="credit-avail-label">Loading balance…</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Sales Order (optional)</label>
+              <select id="pay-so" class="form-input">
+                <option value="">— Select SO —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Amount (RM) *</label>
+              <input type="number" id="pay-amount" class="form-input" placeholder="0.00" step="0.01" min="0.01">
+            </div>
+          </div>
+
+          <div id="bank-fields">
+            <div class="form-group">
+              <label class="form-label">Bank Reference No.</label>
+              <input type="text" id="pay-bank-ref" class="form-input" placeholder="e.g. 12345678">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bank-in Slip *</label>
+              <input type="file" id="pay-slip" class="form-input" accept="image/*,.pdf">
+              <div class="form-note">JPG, PNG or PDF · max 10 MB</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea id="pay-notes" class="form-input" rows="2" placeholder="Optional notes…"></textarea>
+          </div>
+
+          <div id="pay-alert" class="alert" style="display:none"></div>
+          <button class="btn btn-primary btn-lg" onclick="submitPayment()">💳 Submit Payment</button>
+        </div>
+
+        <!-- Payment history -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Payment History</div>
+            <button class="btn btn-outline btn-sm" onclick="loadPayments()">↻ Refresh</button>
+          </div>
+          <div id="payments-wrap">
+            <div class="loading">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY ACCOUNT TAB ── -->
+      <div id="tab-account" class="tab-content">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">My Account</div>
+          </div>
+          <div id="account-info-wrap">
+            <div class="loading">Loading…</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Edit Profile</div>
+          </div>
+          <div style="max-width:400px">
+            <div class="form-group">
+              <label class="form-label">Display Name</label>
+              <input type="text" id="acct-display-name" class="form-input" placeholder="Your name">
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Change Password</div>
+              <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input type="password" id="acct-cur-pwd" class="form-input" placeholder="Enter current password">
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" id="acct-new-pwd" class="form-input" placeholder="Leave blank to keep current">
+              </div>
+            </div>
+            <div id="acct-alert" class="alert" style="display:none"></div>
+            <button class="btn btn-primary" onclick="saveAccount()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /p-content -->
+  </div><!-- /p-main -->
+
+</div><!-- /portal-layout -->
+
+<!-- Quote success modal -->
+<div id="quote-success-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">✅</div>
+    <div class="modal-title" style="font-size:18px;margin-bottom:8px">Quote Request Submitted!</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px">We'll review your request and send you a quotation shortly. You can track it under <strong>My Quotations</strong>.</p>
+    <button class="btn btn-primary" onclick="document.getElementById('quote-success-modal').classList.add('hidden');activatePortalTab('quotations')">View My Quotations</button>
+  </div>
+</div>
+
+<script src="portal.js"></script>
+</body>
+</html>
