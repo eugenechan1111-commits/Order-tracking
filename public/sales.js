@@ -283,6 +283,7 @@ function openSODetails(id) {
   }
   if (nextStatus && !depositNeeded) {
     const labels = {
+      deposit_pending: '→ Payment Pending',
       confirmed: 'Confirm Order',
       in_production: 'Mark In Production',
       ready: 'Mark Ready',
@@ -290,7 +291,7 @@ function openSODetails(id) {
       invoiced: 'Create Invoice',
       paid: 'Mark Paid',
     };
-    actions.push(`<button class="btn btn-primary" onclick="advanceSOStatus('${id}', '${nextStatus}')">${labels[nextStatus] || `→ ${capitalize(nextStatus)}`}</button>`);
+    actions.push(`<button class="btn btn-primary" onclick="advanceSOStatus('${id}', '${nextStatus}')">${labels[nextStatus] || `→ ${soLabel(nextStatus)}`}</button>`);
   }
   if (so.status === 'confirmed' && !so.job_order_id) {
     actions.push(`<button class="btn btn-outline" onclick="createJobOrder('${id}')">Create Job Order</button>`);
